@@ -148,6 +148,7 @@ struct XeDevice {
 ---
 
 ## External References
+- **[RESEARCH.md](RESEARCH.md)** — Comprehensive code examples and implementation patterns from WhateverGreen, Lilu, NootedBlue, and Linux xe driver.
 - Linux `drivers/gpu/drm/xe` — register maps, GuC/HuC load, ring ops.
 - Lilu / WhateverGreen — macOS kext scaffolding and patching patterns.
 - NootedBlue — framebuffer spoofing and IGPU property examples.
