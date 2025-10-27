@@ -1,5 +1,13 @@
 # Xe macOS iGPU Driver — Technical Overview
 
+## Quick Start
+
+👉 **New to the project?** See [QUICKSTART.md](QUICKSTART.md) for quick commands  
+📖 **Building the kext?** See [BUILD.md](BUILD.md) for detailed instructions  
+🧪 **Testing on Mac?** See [TESTING.md](TESTING.md) for complete testing guide  
+
+---
+
 ## Current Status
 
 🎉 **Proof of Concept (PoC) + Acceleration Framework Implemented** - See [POC.md](POC.md) for details.
