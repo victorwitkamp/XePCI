@@ -37,6 +37,14 @@ jobs:
         xcode-select --install 2>/dev/null || true
         xcode-select -p
         
+    - name: Clone MacKernelSDK
+      run: |
+        echo "Cloning MacKernelSDK..."
+        git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
+        sudo mkdir -p /Library/Developer/SDKs
+        sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
+        echo "MacKernelSDK installed at /Library/Developer/SDKs/MacKernelSDK"
+        
     - name: Clone Lilu SDK
       run: |
         echo "Cloning Lilu for SDK headers..."
@@ -70,7 +78,7 @@ jobs:
     - name: Build release version
       run: |
         echo "Building XePCI Lilu Plugin (Release)..."
-        make release LILU_SDK=/usr/local/include/Lilu
+        make release LILU_SDK=/usr/local/include/Lilu KERNEL_SDK=/Library/Developer/SDKs/MacKernelSDK
         
     - name: Verify build output
       run: |
@@ -148,6 +156,13 @@ jobs:
       with:
         xcode-version: latest-stable
     
+    - name: Clone MacKernelSDK
+      run: |
+        echo "Cloning MacKernelSDK..."
+        git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
+        sudo mkdir -p /Library/Developer/SDKs
+        sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
+    
     - name: Clone Lilu SDK
       run: |
         git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
@@ -159,7 +174,7 @@ jobs:
     - name: Build debug version
       run: |
         echo "Building XePCI Lilu Plugin (Debug)..."
-        make debug LILU_SDK=/usr/local/include/Lilu
+        make debug LILU_SDK=/usr/local/include/Lilu KERNEL_SDK=/Library/Developer/SDKs/MacKernelSDK
         
     - name: Verify debug build
       run: |

@@ -3,7 +3,7 @@
 
 # Project Configuration
 KEXT_NAME = XePCI.kext
-BUNDLE_ID = org.yourorg.XePCI
+BUNDLE_ID = nl.victorwitkamp.XePCI
 VERSION = 1.0.0
 
 # Directories
@@ -20,18 +20,19 @@ PLIST = kexts/Info.plist
 
 # Lilu SDK paths - adjust based on your Lilu installation
 LILU_SDK ?= /usr/local/include/Lilu
-KERNEL_SDK ?= /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+KERNEL_SDK ?= /Library/Developer/SDKs/MacKernelSDK
 
 # Compiler and linker flags
 CXX = clang++
 CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-fno-rtti -fno-exceptions \
 	-fno-builtin -fno-common \
-	-mkernel -nostdlib -nostdinc++ \
+	-mkernel -nostdlib \
 	-D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
+	-DPRODUCT_NAME=XePCI -DMODULE_VERSION=\"$(VERSION)\" \
+	-isysroot $(KERNEL_SDK) \
+	-iframework $(KERNEL_SDK)/System/Library/Frameworks \
 	-I$(LILU_SDK) \
-	-I$(KERNEL_SDK)/System/Library/Frameworks/Kernel.framework/Headers \
-	-I$(KERNEL_SDK)/usr/include \
 	-Ikexts
 
 LDFLAGS = -Xlinker -kext \
