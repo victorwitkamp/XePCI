@@ -103,8 +103,7 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   // Page-align (4 KiB)
   uint32_t sz = (bytes + 0xFFF) & ~0xFFF;
 
-  auto *md = IOBufferMemoryDescriptor::inTaskWithOptions(
-      kernel_task,
+  auto *md = IOBufferMemoryDescriptor::withOptions(
       kIOMemoryKernelUserShared | kIODirectionInOut,
       sz, page_size);
 
@@ -123,6 +122,7 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
 
   return kIOReturnSuccess;
 }
+
 
 IOReturn XeService::ucSubmitNoop() {
   // Stub for now — will do MI_NOOP once forcewake, GGTT & rings are ready.

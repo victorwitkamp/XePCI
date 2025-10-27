@@ -6,8 +6,7 @@
 #include <IOKit/IOLib.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IOUserClient.h>
-#include <libkern/OSArray.h>
-#include <mach/mach_types.h> // kernel_task
+#include <libkern/c++/OSArray.h>   // <-- C++ path is required in MacKernelSDK
 
 // IOUserClient selector IDs (keep in one place)
 enum {
