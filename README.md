@@ -1,5 +1,13 @@
 # Xe macOS iGPU Driver — Technical Overview
 
+## Quick Start
+
+👉 **New to the project?** See [QUICKSTART.md](QUICKSTART.md) for quick commands  
+📖 **Building the kext?** See [BUILD.md](BUILD.md) for detailed instructions  
+🧪 **Testing on Mac?** See [TESTING.md](TESTING.md) for complete testing guide  
+
+---
+
 ## Current Status
 
 🎉 **Proof of Concept (PoC) + Acceleration Framework Implemented** - See [POC.md](POC.md) for details.
@@ -168,17 +176,43 @@ struct XeDevice {
 
 ---
 
-## Build Notes
-- Build with Xcode or `kmutil`; SIP disabled for dev.
-- Link against `IOKit` and `libkern`.
-- Start with **read-only MMIO**; verify register layout using Linux `i915` / `xe` sources.
-- Always test on non-critical hardware with fallback GPU/display.
+## Build and Testing
+
+### Quick Start
+
+```bash
+# Build the Lilu plugin
+make release
+
+# Install (requires sudo and SIP disabled)
+sudo make install
+
+# Test with xectl tool
+cd userspace
+clang xectl.c -framework IOKit -framework CoreFoundation -o xectl
+sudo ./xectl info
+```
+
+### Documentation
+
+- **[BUILD.md](BUILD.md)** — Complete build instructions for the Lilu plugin, including prerequisites, build options, and CI/CD setup.
+- **[TESTING.md](TESTING.md)** — Comprehensive testing guide for local Mac, including system preparation, installation, debugging, and safety procedures.
+
+### Build Notes
+- Requires Lilu SDK headers for compilation
+- SIP must be disabled for development and testing
+- Link against `IOKit` and `libkern`
+- Start with **read-only MMIO**; verify register layout using Linux `i915` / `xe` sources
+- Always test on non-critical hardware with fallback GPU/display
+- See [BUILD.md](BUILD.md) for detailed build instructions
 
 ---
 
 ## External References
 - **[POC.md](POC.md)** — Proof of Concept implementation details and technical documentation.
 - **[RESEARCH.md](RESEARCH.md)** — Comprehensive code examples and implementation patterns from WhateverGreen, Lilu, NootedBlue, and Linux xe driver.
+- **[BUILD.md](BUILD.md)** — Build system documentation and compilation instructions.
+- **[TESTING.md](TESTING.md)** — Testing procedures and debugging guide.
 - Linux `drivers/gpu/drm/xe` — register maps, GuC/HuC load, ring ops.
 - Lilu / WhateverGreen — macOS kext scaffolding and patching patterns.
 - NootedBlue — framebuffer spoofing and IGPU property examples.
