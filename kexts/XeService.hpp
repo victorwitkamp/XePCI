@@ -18,6 +18,10 @@ enum {
   kMethodGetGTConfig  = 5,
 };
 
+// Ring Control Bits (duplicated from XePCI.hpp for XeService modularity)
+#define RING_VALID                      (1 << 0)
+#define RING_IDLE                       (1 << 2)
+
 // Simple buffer tracking structure
 struct XeBufferHandle {
   IOBufferMemoryDescriptor *mem;

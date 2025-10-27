@@ -168,6 +168,7 @@ bool org_yourorg_XePCI::init(OSDictionary *props) {
     ggtt.baseAddr = 0;
     ggtt.size = 0;
     ggtt.numEntries = 0;
+    ggtt.nextFreeOffset = 0;
     ggtt.initialized = false;
 
     // Initialize ring buffer structure
@@ -521,21 +522,57 @@ void org_yourorg_XePCI::dumpRegisters() {
 // ===== GGTT Management Implementation =====
 
 bool org_yourorg_XePCI::initGGTT() {
-    // GGTT initialization is complex and requires:
+    // GGTT initialization:
     // 1. Reading GGTT base from PCI config
     // 2. Mapping GGTT aperture
     // 3. Initializing scratch pages
-    // This is a preparation stub for future implementation
+    // From RESEARCH.md Section 4.4 and bring-up checklist [Phase 2]
 
-    IOLog("XePCI: GGTT init (preparation stub)\n");
+    IOLog("XePCI: GGTT initialization starting\n");
 
     // Read GGC (Graphics Control) from PCI config space
     UInt32 ggc = pciDev->configRead32(GEN12_GGC);
     IOLog("XePCI: GGC register = 0x%08x\n", ggc);
 
-    // Mark as prepared but not fully initialized
-    ggtt.initialized = false;
-    return false; // Return false to indicate preparation only
+    // Extract GGTT size from GGC register
+    // Bits 8-9 encode GGTT size for Gen12
+    UInt32 ggttSizeBits = (ggc >> 8) & 0x3;
+    switch (ggttSizeBits) {
+        case 0: ggtt.size = 0; break;           // Disabled
+        case 1: ggtt.size = 2 * 1024 * 1024; break;   // 2MB
+        case 2: ggtt.size = 4 * 1024 * 1024; break;   // 4MB
+        case 3: ggtt.size = 8 * 1024 * 1024; break;   // 8MB
+    }
+
+    if (ggtt.size == 0) {
+        IOLog("XePCI: GGTT is disabled in hardware\n");
+        return false;
+    }
+
+    IOLog("XePCI: GGTT size: %llu bytes\n", ggtt.size);
+
+    // Calculate number of GGTT entries (each entry is 8 bytes, covers 4KB page)
+    ggtt.numEntries = (UInt32)(ggtt.size / 8);
+    IOLog("XePCI: GGTT entries: %u\n", ggtt.numEntries);
+
+    // Read GGTT base address from MMIO
+    // The PGTBL_CTL register contains the GGTT base address
+    UInt32 pgtblCtl = readReg(GEN12_PGTBL_CTL);
+    ggtt.baseAddr = (UInt64)(pgtblCtl & 0xFFFFF000);  // Mask lower 12 bits
+    IOLog("XePCI: GGTT base address: 0x%llx (PGTBL_CTL=0x%08x)\n", ggtt.baseAddr, pgtblCtl);
+
+    // For Gen12, we don't directly map GGTT PTEs - they're accessed through
+    // the GGTT aperture or via MMIO commands. We track the base for bookkeeping.
+    
+    // Initialize allocation tracking
+    // In a full implementation, we'd maintain a free list or bitmap
+    // For now, simple linear allocation starting at offset 0
+    // Reserve first 16MB for system/GuC use (common practice)
+    ggtt.nextFreeOffset = GGTT_RESERVED_SIZE;  // Start after reserved region
+    ggtt.initialized = true;
+    
+    IOLog("XePCI: GGTT initialized successfully\n");
+    return true;
 }
 
 void org_yourorg_XePCI::cleanupGGTT() {
@@ -546,10 +583,31 @@ void org_yourorg_XePCI::cleanupGGTT() {
 }
 
 UInt64 org_yourorg_XePCI::allocateGTTSpace(UInt32 size) {
-    // Stub for GTT space allocation
-    // Real implementation would track allocated regions
-    IOLog("XePCI: GTT space allocation requested (size=%u) - stub\n", size);
-    return 0;
+    // GTT space allocation with simple linear allocator
+    // Real implementation would use a proper allocator (e.g., free list, buddy allocator)
+    // From RESEARCH.md Section 4.4 and bring-up checklist [Phase 2]
+    
+    if (!ggtt.initialized) {
+        IOLog("XePCI: GTT allocation failed - GGTT not initialized\n");
+        return 0;
+    }
+    
+    // Align size to page boundary (4KB)
+    UInt32 alignedSize = (size + PAGE_MASK_4K) & ~PAGE_MASK_4K;
+    
+    // Check if we have enough space
+    if (ggtt.nextFreeOffset + alignedSize > ggtt.size) {
+        IOLog("XePCI: GTT allocation failed - out of space (requested=%u, available=%llu)\n",
+              alignedSize, ggtt.size - ggtt.nextFreeOffset);
+        return 0;
+    }
+    
+    // Allocate from current offset
+    UInt64 offset = ggtt.nextFreeOffset;
+    ggtt.nextFreeOffset += alignedSize;
+    
+    IOLog("XePCI: GTT space allocated at offset 0x%llx (size=%u bytes)\n", offset, alignedSize);
+    return offset;
 }
 
 // ===== Ring Buffer Management Implementation =====
@@ -640,19 +698,43 @@ bool org_yourorg_XePCI::writeRingCommand(XeRing *ring, UInt32 *cmds, UInt32 numD
 void org_yourorg_XePCI::updateRingTail(XeRing *ring) {
     if (!ring || !ring->initialized) return;
 
-    // In full implementation, this would write to RING_TAIL register
-    // writeReg(GEN12_RING_TAIL_RCS0, ring->tail);
-    IOLog("XePCI: Ring tail updated to 0x%x (preparation mode)\n", ring->tail);
+    // Write to RING_TAIL register to notify GPU of new commands
+    // From RESEARCH.md Section 4.5 and bring-up checklist [Phase 4]
+    
+    // Ensure forcewake is active before writing ring registers
+    if (!forcewakeActive) {
+        IOLog("XePCI: WARNING - Updating ring tail without active forcewake\n");
+    }
+    
+    // Write tail pointer to hardware register
+    // For RCS0 (Render Command Streamer 0)
+    writeReg(GEN12_RING_TAIL_RCS0, ring->tail);
+    
+    IOLog("XePCI: Ring tail updated to 0x%x (written to hardware)\n", ring->tail);
 }
 
 // ===== Command Submission Implementation =====
 
 bool org_yourorg_XePCI::submitMINoop() {
-    IOLog("XePCI: Submitting MI_NOOP command (preparation stub)\n");
+    // Submit MI_NOOP command to GPU with full hardware programming
+    // From RESEARCH.md Section 4.7 and bring-up checklist [Phase 5]
+    
+    IOLog("XePCI: Submitting MI_NOOP command\n");
 
     if (!renderRing.initialized) {
         IOLog("XePCI: Ring buffer not initialized\n");
         return false;
+    }
+
+    // Ensure forcewake is active for GPU operations
+    bool needReleaseForcewake = false;
+    if (!forcewakeActive) {
+        IOLog("XePCI: Acquiring forcewake for submission\n");
+        if (!acquireForcewake(FORCEWAKE_GT_BIT)) {
+            IOLog("XePCI: WARNING - Failed to acquire forcewake, continuing anyway\n");
+        } else {
+            needReleaseForcewake = true;
+        }
     }
 
     // Prepare MI_NOOP batch
@@ -665,21 +747,77 @@ bool org_yourorg_XePCI::submitMINoop() {
     // Write to ring (in memory only for now)
     if (!writeRingCommand(&renderRing, batch, 3)) {
         IOLog("XePCI: Failed to write MI_NOOP to ring\n");
+        if (needReleaseForcewake) {
+            releaseForcewake(FORCEWAKE_GT_BIT);
+        }
         return false;
     }
 
-    // Update tail (preparation mode - doesn't touch hardware)
+    // Update tail pointer in hardware - this triggers GPU execution
     updateRingTail(&renderRing);
-
-    IOLog("XePCI: MI_NOOP prepared in ring buffer\n");
+    
+    // In production, we would:
+    // 1. Wait for completion via seqno or interrupt
+    // 2. Handle timeout/error cases
+    // For now, just log success
+    IOLog("XePCI: MI_NOOP submitted to hardware\n");
+    
+    // Increment sequence number
+    seqno = getNextSeqno();
+    IOLog("XePCI: Sequence number: %u\n", seqno);
+    
+    if (needReleaseForcewake) {
+        releaseForcewake(FORCEWAKE_GT_BIT);
+    }
+    
     return true;
 }
 
 bool org_yourorg_XePCI::waitForIdle(UInt32 timeoutMs) {
-    // Stub for waiting for GPU idle
-    // Real implementation would poll seqno or interrupt
-    IOLog("XePCI: Wait for idle (timeout=%ums) - stub\n", timeoutMs);
-    return true;
+    // Wait for GPU idle by polling ring status
+    // From RESEARCH.md Section 4.7 and bring-up checklist [Phase 5]
+    // Real implementation would use seqno polling or interrupts
+    
+    IOLog("XePCI: Waiting for GPU idle (timeout=%ums)\n", timeoutMs);
+    
+    if (!bar0Ptr) {
+        IOLog("XePCI: Cannot wait - no MMIO mapping\n");
+        return false;
+    }
+    
+    // Poll ring control register for IDLE bit
+    // For RCS0 (Render Command Streamer 0)
+    UInt32 timeout = timeoutMs;
+    while (timeout > 0) {
+        UInt32 ringCtl = readReg(GEN12_RING_CTL_RCS0);
+        
+        // Check if ring is idle (bit 2)
+        if (ringCtl & RING_IDLE) {
+            IOLog("XePCI: GPU is idle (after %ums)\n", timeoutMs - timeout);
+            return true;
+        }
+        
+        // Also check head == tail for completion
+        UInt32 head = readReg(GEN12_RING_HEAD_RCS0);
+        UInt32 tail = readReg(GEN12_RING_TAIL_RCS0);
+        
+        if (head == tail) {
+            IOLog("XePCI: Ring empty (head=tail=0x%x)\n", head);
+            return true;
+        }
+        
+        IOSleep(1);  // Sleep 1ms
+        timeout--;
+    }
+    
+    // Timeout - log diagnostic info
+    IOLog("XePCI: GPU idle wait timeout after %ums\n", timeoutMs);
+    UInt32 head = readReg(GEN12_RING_HEAD_RCS0);
+    UInt32 tail = readReg(GEN12_RING_TAIL_RCS0);
+    UInt32 ctl = readReg(GEN12_RING_CTL_RCS0);
+    IOLog("XePCI: Ring state at timeout - HEAD=0x%x TAIL=0x%x CTL=0x%x\n", head, tail, ctl);
+    
+    return false;
 }
 
 UInt32 org_yourorg_XePCI::getNextSeqno() {
@@ -727,10 +865,27 @@ void org_yourorg_XePCI::destroyBufferObject(XeBufferObject *bo) {
 bool org_yourorg_XePCI::pinBufferObject(XeBufferObject *bo) {
     if (!bo || bo->pinned) return false;
 
-    // Stub for pinning BO to GGTT
+    // Pin buffer object to GGTT with proper allocation
+    // From RESEARCH.md Section 4.9 and bring-up checklist [Phase 6]
+    
+    IOLog("XePCI: Pinning buffer object (size=%u)\n", bo->size);
+    
+    // Allocate GTT space for this buffer
     bo->gttOffset = allocateGTTSpace(bo->size);
+    
+    if (bo->gttOffset == 0) {
+        IOLog("XePCI: Failed to allocate GTT space for buffer\n");
+        return false;
+    }
+    
+    // In a full implementation, we would:
+    // 1. Get physical pages from IOBufferMemoryDescriptor
+    // 2. Program GGTT entries to point to those pages
+    // 3. Set appropriate cache attributes (PAT)
+    // For now, we just mark as pinned with allocated offset
+    
     bo->pinned = true;
-
+    
     IOLog("XePCI: Buffer object pinned at GTT offset 0x%llx\n", bo->gttOffset);
     return true;
 }
@@ -738,14 +893,42 @@ bool org_yourorg_XePCI::pinBufferObject(XeBufferObject *bo) {
 // ===== Interrupt Handling Preparation =====
 
 bool org_yourorg_XePCI::setupInterrupts() {
-    // Interrupt setup is complex and requires:
-    // 1. Interrupt allocation
-    // 2. Handler registration
-    // 3. Interrupt enable in hardware
-    // This is a preparation stub
-
-    IOLog("XePCI: Interrupt setup (preparation stub)\n");
-    return false; // Return false to indicate preparation only
+    // Interrupt setup with allocation and handler registration
+    // From RESEARCH.md Section 4.7 and bring-up checklist [Phase 4]
+    // Full implementation requires:
+    // 1. Interrupt allocation via getInterruptType
+    // 2. Handler registration via registerInterrupt
+    // 3. Hardware interrupt enable in MMIO registers
+    
+    IOLog("XePCI: Setting up interrupt framework\n");
+    
+    if (!pciDev) {
+        IOLog("XePCI: No PCI device for interrupt setup\n");
+        return false;
+    }
+    
+    // Check if device has interrupts available
+    int intType;
+    IOReturn ret = pciDev->getInterruptType(0, &intType);
+    if (ret != kIOReturnSuccess) {
+        IOLog("XePCI: No interrupts available (error=0x%x)\n", ret);
+        return false;
+    }
+    
+    IOLog("XePCI: Interrupt type: %d (0=level, 1=edge)\n", intType);
+    
+    // In full implementation, we would:
+    // 1. Register interrupt handler with registerInterrupt()
+    // 2. Enable specific GT interrupts in GEN12_GT_INTR_DW0/DW1
+    // 3. Enable master interrupt in GEN12_GFX_MSTR_IRQ
+    // 4. Set up interrupt work loop and event sources
+    
+    // For now, just verify interrupt capability
+    IOLog("XePCI: Interrupt framework prepared (handler registration deferred)\n");
+    
+    // Return false to indicate we're not fully enabling interrupts yet
+    // This is safe for basic operation without interrupt-driven completion
+    return false;
 }
 
 void org_yourorg_XePCI::cleanupInterrupts() {
@@ -756,19 +939,49 @@ void org_yourorg_XePCI::cleanupInterrupts() {
 // ===== GuC Firmware Loading Preparation =====
 
 bool org_yourorg_XePCI::prepareGuCFirmware() {
-    // GuC firmware loading requires:
-    // 1. Firmware file loading
-    // 2. Memory allocation in WOPCM
-    // 3. GuC initialization
-    // This is a preparation stub
-
-    IOLog("XePCI: GuC firmware preparation (stub)\n");
-
+    // GuC firmware loading preparation
+    // From RESEARCH.md Section 4.8 and bring-up checklist [Phase 3]
+    // Full implementation requires:
+    // 1. Firmware file loading from disk
+    // 2. WOPCM (Write-Once Protected Memory) allocation
+    // 3. DMA upload to GPU memory
+    // 4. GuC initialization and authentication
+    
+    IOLog("XePCI: Preparing GuC firmware framework\n");
+    
+    if (!bar0Ptr) {
+        IOLog("XePCI: No MMIO mapping for GuC registers\n");
+        return false;
+    }
+    
     // Read GuC status register
     UInt32 gucStatus = readReg(GEN12_GUC_STATUS);
     IOLog("XePCI: GuC status = 0x%08x\n", gucStatus);
-
-    return false; // Return false to indicate preparation only
+    
+    // Read WOPCM size register
+    UInt32 wopcmSize = readReg(GEN12_GUC_WOPCM_SIZE);
+    IOLog("XePCI: GuC WOPCM size = 0x%08x\n", wopcmSize);
+    
+    // Check if GuC is already running (some platforms auto-load)
+    if (gucStatus & GUC_STATUS_INITIALIZED) {  // Bit 0 indicates GuC is initialized
+        IOLog("XePCI: GuC appears to be already initialized\n");
+    } else {
+        IOLog("XePCI: GuC requires firmware loading\n");
+    }
+    
+    // Full GuC loading sequence would be:
+    // 1. Allocate WOPCM region (writeReg GEN12_GUC_WOPCM_SIZE, GEN12_DMA_GUC_WOPCM_OFFSET)
+    // 2. Load firmware binary from /System/Library/Extensions/AppleIntelXeGraphics.kext/firmware/
+    // 3. DMA transfer firmware to GuC memory via GEN12_GUC_GGTT_ADDR
+    // 4. Set GuC control register GEN12_GUC_CTL
+    // 5. Poll GEN12_GUC_STATUS for completion
+    // 6. Handle authentication via host-to-GuC mailbox
+    
+    IOLog("XePCI: GuC firmware framework prepared (loading deferred)\n");
+    
+    // Return false to indicate we're not loading firmware yet
+    // GuC is optional for basic render command submission
+    return false;
 }
 
 // ===== Power Management =====
