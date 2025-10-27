@@ -99,6 +99,7 @@ struct XeGGTT {
     UInt64 baseAddr;                  // GGTT base address
     UInt64 size;                      // GGTT size
     UInt32 numEntries;                // Number of GGTT entries
+    UInt32 nextFreeOffset;            // Next free GTT offset (simple allocator)
     bool initialized;                 // Initialization state
 };
 
