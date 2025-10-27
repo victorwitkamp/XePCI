@@ -31,8 +31,8 @@ CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
 	-DPRODUCT_NAME=XePCI -DMODULE_VERSION=\"$(VERSION)\" \
 	-isysroot $(KERNEL_SDK) \
-	-I$(KERNEL_SDK)/System/Library/Frameworks/Kernel.framework/Headers \
-	-I$(KERNEL_SDK)/usr/include \
+	-isystem $(KERNEL_SDK)/usr/include \
+	-iframework $(KERNEL_SDK)/System/Library/Frameworks \
 	-I$(LILU_SDK) \
 	-Ikexts
 
