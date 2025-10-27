@@ -36,34 +36,34 @@ xcode-select -p
 
 #### 2. Install Lilu SDK Headers
 
-Clone the Lilu repository and install headers (including dependencies):
+Clone the Lilu repository and install headers:
 
 ```bash
 # Clone Lilu
 git clone https://github.com/acidanthera/Lilu.git /tmp/Lilu
 
-# Install complete SDK to standard location (including hde and capstone dependencies)
-sudo mkdir -p /usr/local/include/Lilu
-sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
-sudo cp -R /tmp/Lilu/Lilu/hde /usr/local/include/Lilu/
-sudo cp -R /tmp/Lilu/Lilu/capstone /usr/local/include/Lilu/
+# Install complete SDK to standard location
+# This copies Headers, hde, and capstone directly to /usr/local/include
+# The symlinks in Headers/ will then correctly resolve to hde/ and capstone/
+sudo mkdir -p /usr/local/include
+sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/
 
 # Verify installation
-ls /usr/local/include/Lilu/Headers/
-ls /usr/local/include/Lilu/hde/
-ls /usr/local/include/Lilu/capstone/include/
+ls /usr/local/include/Headers/
+ls /usr/local/include/hde/
+ls /usr/local/include/capstone/include/
 ```
 
 Expected files in Headers directory:
 - `plugin_start.hpp`
 - `kern_api.hpp`
 - `kern_util.hpp`
-- `hde32.h` (symlink to ../hde/hde32.h)
-- `hde64.h` (symlink to ../hde/hde64.h)
-- `capstone` (symlink to ../capstone/include)
+- `hde32.h` (symlink to ../../hde/hde32.h)
+- `hde64.h` (symlink to ../../hde/hde64.h)
+- `capstone` (symlink to ../../capstone/include)
 - etc.
 
-**Note:** The Headers directory contains symlinks that require the hde and capstone directories to be present for the build to succeed.
+**Note:** The Headers directory contains symlinks that point to `../../hde/` and `../../capstone/`. Installing all directories to `/usr/local/include` ensures these symlinks resolve correctly.
 
 ---
 
@@ -141,8 +141,10 @@ build/
 If you installed Lilu headers to a different location:
 
 ```bash
-make release LILU_SDK=/path/to/lilu/headers
+make release LILU_SDK=/path/to/lilu
 ```
+
+**Note:** The path should point to the directory containing the `Headers/`, `hde/`, and `capstone/` subdirectories.
 
 ### Architecture Selection
 
@@ -299,7 +301,7 @@ clang++ -std=c++17 -arch x86_64 \
   -fno-rtti -fno-exceptions -fno-builtin -fno-common \
   -mkernel -nostdlib -nostdinc++ \
   -D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
-  -I/usr/local/include/Lilu \
+  -I/usr/local/include \
   -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Headers \
   -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include \
   -O2 -c kexts/XePCI_LiluPlugin.cpp -o build/XePCI.o
