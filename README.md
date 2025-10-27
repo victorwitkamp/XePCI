@@ -1,13 +1,33 @@
 # Xe macOS iGPU Driver — Technical Overview
 
+## Current Status
+
+🎉 **Proof of Concept (PoC) Implemented** - See [POC.md](POC.md) for details.
+
+The initial PoC demonstrates:
+- ✅ PCI device enumeration and BAR0 mapping
+- ✅ Device identification (Raptor Lake, Alder Lake, Tiger Lake)
+- ✅ Register access framework with safety checks
+- ✅ Forcewake management for safe register access
+- ✅ GT configuration readout (thread status, DSS enable)
+
+**Next Steps**: GGTT initialization, ring buffer setup, MI_NOOP command submission
+
+---
+
 ## Goal
 Implement a minimal Intel Xe (Gen12, Tiger / Alder / Raptor Lake) iGPU driver for macOS to achieve:
-1. PCI enumeration and MMIO access
+1. PCI enumeration and MMIO access ✅ (PoC complete)
 2. Firmware load (GuC/HuC) and GT power-up
 3. Ring-buffer command submission (MI_NOOP → BLT → compute)
 4. Optional framebuffer or IOAccelerator interface
 
-Specifically the goal is to make it work on Intel Raptor Lake-P Xe Graphics (for ASUS GI814JI)
+**Target Device**: Intel Raptor Lake HX (ASUS GI814JI)
+- **Device ID**: 0xA788
+- **Revision**: B-0 (0x04)
+- **Configuration**: HX 8P+16E with 32EU (Execution Units)
+- **Architecture**: Gen 12.2 (Xe-LP)
+
 ---
 
 ## Components
@@ -148,6 +168,8 @@ struct XeDevice {
 ---
 
 ## External References
+- **[POC.md](POC.md)** — Proof of Concept implementation details and technical documentation.
+- **[RESEARCH.md](RESEARCH.md)** — Comprehensive code examples and implementation patterns from WhateverGreen, Lilu, NootedBlue, and Linux xe driver.
 - Linux `drivers/gpu/drm/xe` — register maps, GuC/HuC load, ring ops.
 - Lilu / WhateverGreen — macOS kext scaffolding and patching patterns.
 - NootedBlue — framebuffer spoofing and IGPU property examples.
