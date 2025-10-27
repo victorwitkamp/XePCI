@@ -42,14 +42,17 @@ jobs:
         echo "Cloning Lilu for SDK headers..."
         git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
         
-        # Copy Lilu to /usr/local/include (without nested Lilu directory)
-        # This way symlinks in Headers/ pointing to ../../hde/ will resolve correctly
+        # Create Lilu directory structure that matches the symlink expectations
+        # Symlinks in Lilu/Headers/ point to ../../hde/ and ../../capstone/include
+        # So we need: /usr/local/include/Lilu/Headers/ and /usr/local/include/../{hde,capstone}
         sudo mkdir -p /usr/local/include
-        sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/
+        sudo cp -R /tmp/Lilu/Lilu /usr/local/include/
+        sudo cp -R /tmp/Lilu/hde /usr/local/include/
+        sudo cp -R /tmp/Lilu/capstone /usr/local/include/
         
         echo "Lilu SDK installed at /usr/local/include"
         echo "Headers directory:"
-        ls -la /usr/local/include/Headers/ || true
+        ls -la /usr/local/include/Lilu/Headers/ || true
         echo "HDE directory:"
         ls -la /usr/local/include/hde/ || true
         echo "Capstone directory:"
@@ -62,12 +65,12 @@ jobs:
         xcode-select -p
         ls -la /Library/Developer/CommandLineTools/SDKs/ || true
         echo "Lilu headers:"
-        ls -la /usr/local/include/Headers/ || true
+        ls -la /usr/local/include/Lilu/Headers/ || true
         
     - name: Build release version
       run: |
         echo "Building XePCI Lilu Plugin (Release)..."
-        make release LILU_SDK=/usr/local/include
+        make release LILU_SDK=/usr/local/include/Lilu
         
     - name: Verify build output
       run: |
@@ -149,12 +152,14 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
         sudo mkdir -p /usr/local/include
-        sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/
+        sudo cp -R /tmp/Lilu/Lilu /usr/local/include/
+        sudo cp -R /tmp/Lilu/hde /usr/local/include/
+        sudo cp -R /tmp/Lilu/capstone /usr/local/include/
     
     - name: Build debug version
       run: |
         echo "Building XePCI Lilu Plugin (Debug)..."
-        make debug LILU_SDK=/usr/local/include
+        make debug LILU_SDK=/usr/local/include/Lilu
         
     - name: Verify debug build
       run: |
