@@ -1,0 +1,164 @@
+name: Build XePCI Lilu Plugin
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Lilu Plugin
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Install build dependencies
+      run: |
+        # Install Xcode Command Line Tools if not present
+        xcode-select --install 2>/dev/null || true
+        xcode-select -p
+        
+    - name: Clone Lilu SDK
+      run: |
+        echo "Cloning Lilu for SDK headers..."
+        git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
+        
+        # Copy Lilu headers to standard location
+        sudo mkdir -p /usr/local/include/Lilu
+        sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
+        
+        echo "Lilu SDK installed at /usr/local/include/Lilu"
+        ls -la /usr/local/include/Lilu/Headers/ || true
+    
+    - name: Verify build environment
+      run: |
+        echo "=== Build Environment ==="
+        clang++ --version
+        xcode-select -p
+        ls -la /Library/Developer/CommandLineTools/SDKs/ || true
+        echo "Lilu headers:"
+        ls -la /usr/local/include/Lilu/Headers/ || true
+        
+    - name: Build release version
+      run: |
+        echo "Building XePCI Lilu Plugin (Release)..."
+        make release LILU_SDK=/usr/local/include/Lilu
+        
+    - name: Verify build output
+      run: |
+        echo "=== Build Output ==="
+        ls -laR build/
+        
+        if [ -d "build/XePCI.kext" ]; then
+          echo "✓ XePCI.kext bundle created"
+          echo "Bundle structure:"
+          ls -laR build/XePCI.kext/
+          
+          if [ -f "build/XePCI.kext/Contents/MacOS/XePCI" ]; then
+            echo "✓ Binary exists"
+            file build/XePCI.kext/Contents/MacOS/XePCI
+            otool -L build/XePCI.kext/Contents/MacOS/XePCI || true
+          else
+            echo "✗ Binary missing"
+            exit 1
+          fi
+          
+          if [ -f "build/XePCI.kext/Contents/Info.plist" ]; then
+            echo "✓ Info.plist exists"
+            cat build/XePCI.kext/Contents/Info.plist
+          else
+            echo "✗ Info.plist missing"
+            exit 1
+          fi
+        else
+          echo "✗ Build failed - kext bundle not created"
+          exit 1
+        fi
+    
+    - name: Package build artifacts
+      run: |
+        cd build
+        zip -r XePCI-${{ github.sha }}.zip XePCI.kext
+        cd ..
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: XePCI-kext-${{ github.sha }}
+        path: build/XePCI-*.zip
+        retention-days: 30
+    
+    - name: Build summary
+      if: success()
+      run: |
+        echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ XePCI Lilu Plugin built successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Details" >> $GITHUB_STEP_SUMMARY
+        echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Architecture: x86_64" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "Download the built kext from the Actions artifacts." >> $GITHUB_STEP_SUMMARY
+
+  build-debug:
+    name: Build Debug Version
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Clone Lilu SDK
+      run: |
+        git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
+        sudo mkdir -p /usr/local/include/Lilu
+        sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
+    
+    - name: Build debug version
+      run: |
+        echo "Building XePCI Lilu Plugin (Debug)..."
+        make debug LILU_SDK=/usr/local/include/Lilu
+        
+    - name: Verify debug build
+      run: |
+        if [ -f "build/XePCI.kext/Contents/MacOS/XePCI" ]; then
+          echo "✓ Debug build successful"
+          file build/XePCI.kext/Contents/MacOS/XePCI
+          # Check for debug symbols
+          dsymutil build/XePCI.kext/Contents/MacOS/XePCI || echo "No debug symbols to extract"
+        else
+          echo "✗ Debug build failed"
+          exit 1
+        fi
+    
+    - name: Package debug artifacts
+      run: |
+        cd build
+        zip -r XePCI-debug-${{ github.sha }}.zip XePCI.kext
+        cd ..
+    
+    - name: Upload debug artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: XePCI-kext-debug-${{ github.sha }}
+        path: build/XePCI-debug-*.zip
+        retention-days: 30

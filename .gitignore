@@ -1,1 +1,30 @@
 _codeql_detected_source_root
+
+# Build artifacts
+build/
+*.o
+*.kext
+*.zip
+
+# macOS
+.DS_Store
+*.dSYM
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Compiled binaries
+xectl
+userspace/xectl
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.*.swp
