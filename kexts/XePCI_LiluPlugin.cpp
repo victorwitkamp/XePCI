@@ -6,23 +6,36 @@
 #include <Headers/kern_api.hpp>        // Lilu
 #include "XeService.hpp"
 
-static const char *kPluginId   = "org.yourorg.XePCI";
+static const char *bootargOff[] {
+	"-xepcioff"
+};
+
+static const char *bootargDebug[] {
+	"-xepcidbg"
+};
+
+static const char *bootargBeta[] {
+	"-xepcibeta"
+};
 
 // Lilu plugin interface
 static void pluginStart() {
-  DBGLOG("XeLilu", "pluginStart");
+	DBGLOG("XePCI", "pluginStart");
 }
 
-static void pluginStop() {
-  DBGLOG("XeLilu", "pluginStop");
-}
-
-PluginConfiguration ADDPR(config) = {
-  kPluginId,
-  parseModuleVersion("1.0.0"),
-  LiluAPI::AllowNormal | LiluAPI::AllowInstallerRecovery,
-  nullptr, 0,
-  nullptr, 0,
-  pluginStart,
-  pluginStop
+PluginConfiguration ADDPR(config) {
+	xStringify(PRODUCT_NAME),
+	parseModuleVersion(xStringify(MODULE_VERSION)),
+	LiluAPI::AllowNormal | LiluAPI::AllowInstallerRecovery | LiluAPI::AllowSafeMode,
+	bootargOff,
+	arrsize(bootargOff),
+	bootargDebug,
+	arrsize(bootargDebug),
+	bootargBeta,
+	arrsize(bootargBeta),
+	KernelVersion::SnowLeopard,
+	KernelVersion::Ventura,
+	[]() {
+		pluginStart();
+	}
 };
