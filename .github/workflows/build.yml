@@ -7,10 +7,18 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+# Explicitly limit permissions for security
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Lilu Plugin
     runs-on: macos-latest
+    
+    permissions:
+      contents: read
+      actions: read
     
     steps:
     - name: Checkout repository
@@ -117,6 +125,10 @@ jobs:
   build-debug:
     name: Build Debug Version
     runs-on: macos-latest
+    
+    permissions:
+      contents: read
+      actions: read
     
     steps:
     - name: Checkout repository
