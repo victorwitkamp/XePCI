@@ -36,25 +36,34 @@ xcode-select -p
 
 #### 2. Install Lilu SDK Headers
 
-Clone the Lilu repository and install headers:
+Clone the Lilu repository and install headers (including dependencies):
 
 ```bash
 # Clone Lilu
 git clone https://github.com/acidanthera/Lilu.git /tmp/Lilu
 
-# Install headers to standard location
+# Install complete SDK to standard location (including hde and capstone dependencies)
 sudo mkdir -p /usr/local/include/Lilu
 sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
+sudo cp -R /tmp/Lilu/Lilu/hde /usr/local/include/Lilu/
+sudo cp -R /tmp/Lilu/Lilu/capstone /usr/local/include/Lilu/
 
 # Verify installation
 ls /usr/local/include/Lilu/Headers/
+ls /usr/local/include/Lilu/hde/
+ls /usr/local/include/Lilu/capstone/include/
 ```
 
 Expected files in Headers directory:
 - `plugin_start.hpp`
 - `kern_api.hpp`
 - `kern_util.hpp`
+- `hde32.h` (symlink to ../hde/hde32.h)
+- `hde64.h` (symlink to ../hde/hde64.h)
+- `capstone` (symlink to ../capstone/include)
 - etc.
+
+**Note:** The Headers directory contains symlinks that require the hde and capstone directories to be present for the build to succeed.
 
 ---
 
