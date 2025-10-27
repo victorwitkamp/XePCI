@@ -11,6 +11,7 @@
   <dict>
     <key>com.apple.kpi.iokit</key>  <string>8.0</string>
     <key>com.apple.kpi.libkern</key> <string>8.0</string>
+    <key>as.vit9696.Lilu</key>      <string>1.2.0</string>
   </dict>
 
   <key>IOKitPersonalities</key>

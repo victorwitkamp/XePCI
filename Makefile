@@ -14,8 +14,8 @@ MACOS_DIR = $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR = $(CONTENTS_DIR)/Resources
 
 # Source files
-SOURCES = kexts/XePCI_LiluPlugin.cpp
-HEADERS = 
+SOURCES = kexts/XePCI_LiluPlugin.cpp kexts/XeService.cpp
+HEADERS = kexts/XeService.hpp
 PLIST = kexts/Info.plist
 
 # Lilu SDK paths - adjust based on your Lilu installation
@@ -32,7 +32,8 @@ CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
 	-I$(LILU_SDK) \
 	-I$(KERNEL_SDK)/System/Library/Frameworks/Kernel.framework/Headers \
-	-I$(KERNEL_SDK)/usr/include
+	-I$(KERNEL_SDK)/usr/include \
+	-Ikexts
 
 LDFLAGS = -Xlinker -kext \
 	-nostdlib -lkmod -lkmodc++ -lcc_kext \
@@ -79,10 +80,11 @@ $(KEXT_DIR): $(BUILD_DIR) $(CONTENTS_DIR) $(MACOS_DIR) $(RESOURCES_DIR)
 	@echo "Building XePCI Lilu Plugin..."
 	
 	# Compile source files
-	$(CXX) $(CXXFLAGS) -c $(SOURCES) -o $(BUILD_DIR)/XePCI.o
+	$(CXX) $(CXXFLAGS) -c kexts/XePCI_LiluPlugin.cpp -o $(BUILD_DIR)/XePCI_LiluPlugin.o
+	$(CXX) $(CXXFLAGS) -c kexts/XeService.cpp -o $(BUILD_DIR)/XeService.o
 	
 	# Link kernel extension
-	$(CXX) $(LDFLAGS) -o $(MACOS_DIR)/XePCI $(BUILD_DIR)/XePCI.o
+	$(CXX) $(LDFLAGS) -o $(MACOS_DIR)/XePCI $(BUILD_DIR)/XePCI_LiluPlugin.o $(BUILD_DIR)/XeService.o
 	
 	# Copy Info.plist
 	cp $(PLIST) $(CONTENTS_DIR)/Info.plist
