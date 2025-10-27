@@ -44,7 +44,8 @@ git clone https://github.com/acidanthera/Lilu.git /tmp/Lilu
 
 # Install complete SDK to standard location
 # This copies Lilu/, hde/, and capstone/ to /usr/local/include
-# The symlinks in Lilu/Headers/ will correctly resolve to ../hde/ and ../capstone/
+# The symlinks in Lilu/Headers/ (hde64.h -> ../hde/hde64.h, capstone -> ../capstone/include)
+# will correctly resolve to the adjacent directories
 sudo mkdir -p /usr/local/include
 sudo cp -R /tmp/Lilu/Lilu /usr/local/include/
 sudo cp -R /tmp/Lilu/hde /usr/local/include/
