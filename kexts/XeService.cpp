@@ -80,6 +80,7 @@ void XeService::free() {
 
 IOReturn XeService::newUserClient(task_t task, void* secID, UInt32 type,
                                   OSDictionary* props, IOUserClient** out) {
+  (void)props; // silence unused warning in CI
   IOUserClient* uc = XeCreateUserClient(this, task, secID, type);
   if (!uc) return kIOReturnNoResources;
   *out = uc;
@@ -101,7 +102,7 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   if (!m_boList) return kIOReturnNotReady;
 
   // Page-align (4 KiB)
-  uint32_t sz = (bytes + 0xFFF) & ~0xFFF;
+  uint32_t sz = (bytes + 0xFFFu) & ~0xFFFu;
 
   auto *md = IOBufferMemoryDescriptor::withOptions(
       kIOMemoryKernelUserShared | kIODirectionInOut,
@@ -122,7 +123,6 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
 
   return kIOReturnSuccess;
 }
-
 
 IOReturn XeService::ucSubmitNoop() {
   // Stub for now — will do MI_NOOP once forcewake, GGTT & rings are ready.

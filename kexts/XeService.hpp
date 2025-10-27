@@ -6,7 +6,7 @@
 #include <IOKit/IOLib.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IOUserClient.h>
-#include <libkern/c++/OSArray.h>   // <-- C++ path is required in MacKernelSDK
+#include <libkern/c++/OSArray.h>   // MacKernelSDK C++ header path
 
 // IOUserClient selector IDs (keep in one place)
 enum {
@@ -29,7 +29,6 @@ private:
 
   // Minimal BO registry (kernel-only cookies)
   OSArray               *m_boList {nullptr}; // holds IOBufferMemoryDescriptor*
-  uint64_t               m_nextCookie {1};   // 0 = invalid
 
   // Helpers
   IOBufferMemoryDescriptor* boFromCookie(uint64_t cookie);
@@ -58,7 +57,7 @@ public:
   }
   inline void writeReg(uint32_t off, uint32_t val) {
     // Intentionally unused until forcewake & offsets are verified
-    if (mmio) { mmio[off >> 2] = val; IOSync(); }
+    if (mmio) { mmio[off >> 2] = val; OSSynchronizeIO(); }
   }
 };
 
