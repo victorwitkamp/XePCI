@@ -3,7 +3,7 @@
 
 # Project Configuration
 KEXT_NAME = XePCI.kext
-BUNDLE_ID = as.vit9696.XePCI
+BUNDLE_ID = nl.victorwitkamp.XePCI
 VERSION = 1.0.0
 
 # Directories

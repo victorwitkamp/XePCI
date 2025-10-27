@@ -7,7 +7,7 @@
 <key>CFBundleExecutable</key>
 <string>XePCI</string>
 <key>CFBundleIdentifier</key>
-<string>as.vit9696.XePCI</string>
+<string>nl.victorwitkamp.XePCI</string>
 <key>CFBundleInfoDictionaryVersion</key>
 <string>6.0</string>
 <key>CFBundleName</key>
@@ -20,10 +20,10 @@
 <string>1.0.0</string>
 <key>IOKitPersonalities</key>
 <dict>
-<key>as.vit9696.XePCI</key>
+<key>nl.victorwitkamp.XePCI</key>
 <dict>
 <key>CFBundleIdentifier</key>
-<string>as.vit9696.XePCI</string>
+<string>nl.victorwitkamp.XePCI</string>
 <key>IOClass</key>
 <string>XePCI</string>
 <key>IOMatchCategory</key>
@@ -36,7 +36,7 @@
 <key>XeService</key>
 <dict>
 <key>CFBundleIdentifier</key>
-<string>as.vit9696.XePCI</string>
+<string>nl.victorwitkamp.XePCI</string>
 <key>IOClass</key>
 <string>XeService</string>
 <key>IOProviderClass</key>
