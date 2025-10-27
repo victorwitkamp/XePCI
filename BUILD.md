@@ -43,13 +43,16 @@ Clone the Lilu repository and install headers:
 git clone https://github.com/acidanthera/Lilu.git /tmp/Lilu
 
 # Install complete SDK to standard location
-# This copies Headers, hde, and capstone directly to /usr/local/include
-# The symlinks in Headers/ will then correctly resolve to hde/ and capstone/
+# This copies Lilu/, hde/, and capstone/ to /usr/local/include
+# The symlinks in Lilu/Headers/ (hde64.h -> ../hde/hde64.h, capstone -> ../capstone/include)
+# will correctly resolve to the adjacent directories
 sudo mkdir -p /usr/local/include
-sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/
+sudo cp -R /tmp/Lilu/Lilu /usr/local/include/
+sudo cp -R /tmp/Lilu/hde /usr/local/include/
+sudo cp -R /tmp/Lilu/capstone /usr/local/include/
 
 # Verify installation
-ls /usr/local/include/Headers/
+ls /usr/local/include/Lilu/Headers/
 ls /usr/local/include/hde/
 ls /usr/local/include/capstone/include/
 ```
@@ -58,12 +61,12 @@ Expected files in Headers directory:
 - `plugin_start.hpp`
 - `kern_api.hpp`
 - `kern_util.hpp`
-- `hde32.h` (symlink to ../../hde/hde32.h)
-- `hde64.h` (symlink to ../../hde/hde64.h)
-- `capstone` (symlink to ../../capstone/include)
+- `hde32.h` (symlink to ../hde/hde32.h)
+- `hde64.h` (symlink to ../hde/hde64.h)
+- `capstone` (symlink to ../capstone/include)
 - etc.
 
-**Note:** The Headers directory contains symlinks that point to `../../hde/` and `../../capstone/`. Installing all directories to `/usr/local/include` ensures these symlinks resolve correctly.
+**Note:** The Headers directory contains symlinks that point to `../hde/` and `../capstone/`. Installing Lilu/, hde/, and capstone/ directories to `/usr/local/include` ensures these symlinks resolve correctly.
 
 ---
 
@@ -144,7 +147,7 @@ If you installed Lilu headers to a different location:
 make release LILU_SDK=/path/to/lilu
 ```
 
-**Note:** The path should point to the directory containing the `Headers/`, `hde/`, and `capstone/` subdirectories.
+**Note:** The path should point to the Lilu directory (e.g., `/usr/local/include/Lilu`), not to the Headers subdirectory.
 
 ### Architecture Selection
 

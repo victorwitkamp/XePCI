@@ -19,7 +19,6 @@ HEADERS = kexts/XeService.hpp
 PLIST = kexts/Info.plist
 
 # Lilu SDK paths - adjust based on your Lilu installation
-# Option 1: Use MacKernelSDK with Lilu headers
 LILU_SDK ?= /usr/local/include/Lilu
 KERNEL_SDK ?= /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
 
