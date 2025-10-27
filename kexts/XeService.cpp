@@ -8,6 +8,15 @@ OSDefineMetaClassAndStructors(XeUserClient, IOUserClient)
 
 bool XeService::init(OSDictionary* prop) {
   if (!super::init(prop)) return false;
+  
+  // Initialize buffer tracking
+  for (int i = 0; i < kMaxBuffers; i++) {
+    buffers[i].mem = nullptr;
+    buffers[i].cookie = 0;
+    buffers[i].size = 0;
+  }
+  bufferCount = 0;
+  
   return true;
 }
 
@@ -36,7 +45,12 @@ bool XeService::start(IOService* provider) {
   mmio = reinterpret_cast<volatile uint32_t*>(bar0->getVirtualAddress());
   if (!mmio) return false;
 
-  IOLog("XeService: BAR0 @ %p (8086:A788)\n", (void*)mmio);
+  // Read device info
+  deviceId = pci->configRead16(kIOPCIConfigDeviceID);
+  revisionId = pci->configRead8(kIOPCIConfigRevisionID);
+
+  IOLog("XeService: BAR0 @ %p (device 0x%04x, rev 0x%02x)\n", 
+        (void*)mmio, deviceId, revisionId);
 
   // Safe sanity reads only
   uint32_t r0 = mmio[0x0000/4];
@@ -44,11 +58,20 @@ bool XeService::start(IOService* provider) {
   uint32_t r2 = mmio[0x1000/4];
   IOLog("XeService: reg[0x0000]=0x%08x reg[0x0100]=0x%08x reg[0x1000]=0x%08x\n", r0, r1, r2);
 
+  // Initialize acceleration framework
+  accelReady = initAcceleration();
+  if (accelReady) {
+    IOLog("XeService: Acceleration framework initialized\n");
+  } else {
+    IOLog("XeService: Acceleration framework prepared (not fully active)\n");
+  }
+
   registerService(); // allow IOUserClient to open
   return true;
 }
 
 void XeService::stop(IOService* provider) {
+  cleanupBuffers();
   if (bar0) { bar0->release(); bar0=nullptr; mmio=nullptr; }
   super::stop(provider);
 }
@@ -120,6 +143,26 @@ IOReturn XeUserClient::externalMethod(uint32_t selector, IOExternalMethodArgumen
       }
       return kr;
     }
+    case kMethodGetDeviceInfo: {
+      uint32_t info[4] = {};
+      uint32_t count = 4;
+      IOReturn kr = providerSvc->ucGetDeviceInfo(info, &count);
+      if (kr == kIOReturnSuccess) {
+        for (uint32_t i=0; i<count; ++i) args->scalarOutput[i] = info[i];
+        args->scalarOutputCount = count;
+      }
+      return kr;
+    }
+    case kMethodGetGTConfig: {
+      uint32_t config[4] = {};
+      uint32_t count = 4;
+      IOReturn kr = providerSvc->ucGetGTConfig(config, &count);
+      if (kr == kIOReturnSuccess) {
+        for (uint32_t i=0; i<count; ++i) args->scalarOutput[i] = config[i];
+        args->scalarOutputCount = count;
+      }
+      return kr;
+    }
     default:
       return kIOReturnUnsupported;
   }
@@ -137,9 +180,34 @@ IOReturn XeService::ucReadRegs(uint32_t count, uint32_t* out, uint32_t* outCount
   return kIOReturnSuccess;
 }
 
-IOReturn XeService::ucCreateBuffer(uint32_t /*bytes*/, uint64_t* outCookie) {
-  // Stub: return a dummy cookie; real impl should allocate IOBufferMemoryDescriptor and track it.
-  *outCookie = 0xB0B0B0B0ULL;
+IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
+  if (bufferCount >= kMaxBuffers) {
+    IOLog("XeService: Maximum buffer count reached\n");
+    return kIOReturnNoMemory;
+  }
+  
+  // Allocate buffer
+  IOBufferMemoryDescriptor *mem = IOBufferMemoryDescriptor::inTaskWithOptions(
+    kernel_task,
+    kIOMemoryPhysicallyContiguous | kIOMemoryKernelUserShared,
+    bytes,
+    PAGE_SIZE
+  );
+  
+  if (!mem) {
+    IOLog("XeService: Failed to allocate buffer\n");
+    return kIOReturnNoMemory;
+  }
+  
+  // Generate cookie and store buffer
+  uint64_t cookie = 0xB0B00000ULL | bufferCount;
+  buffers[bufferCount].mem = mem;
+  buffers[bufferCount].cookie = cookie;
+  buffers[bufferCount].size = bytes;
+  bufferCount++;
+  
+  *outCookie = cookie;
+  IOLog("XeService: Created buffer %llu (size=%u)\n", cookie, bytes);
   return kIOReturnSuccess;
 }
 
@@ -153,3 +221,104 @@ IOReturn XeService::ucWait(uint32_t /*timeoutMs*/) {
   // Stub: pretend completion arrived.
   return kIOReturnSuccess;
 }
+
+IOReturn XeService::ucGetDeviceInfo(uint32_t* info, uint32_t* outCount) {
+  if (!info || !outCount) return kIOReturnBadArgument;
+  
+  // Return device information
+  // info[0] = vendor ID
+  // info[1] = device ID
+  // info[2] = revision ID
+  // info[3] = acceleration ready flag
+  
+  uint32_t n = (*outCount >= 4) ? 4 : *outCount;
+  
+  if (n >= 1) info[0] = 0x8086;  // Intel vendor ID
+  if (n >= 2) info[1] = deviceId;
+  if (n >= 3) info[2] = revisionId;
+  if (n >= 4) info[3] = accelReady ? 1 : 0;
+  
+  *outCount = n;
+  return kIOReturnSuccess;
+}
+
+IOReturn XeService::ucGetGTConfig(uint32_t* config, uint32_t* outCount) {
+  if (!config || !outCount || !mmio) return kIOReturnBadArgument;
+  
+  // Return GT configuration registers
+  // config[0] = GT_THREAD_STATUS
+  // config[1] = GT_GEOMETRY_DSS_ENABLE
+  // config[2] = FORCEWAKE_ACK_GT
+  // config[3] = Ring status (stub)
+  
+  uint32_t n = (*outCount >= 4) ? 4 : *outCount;
+  
+  if (n >= 1) config[0] = readReg(0x13800);  // GEN12_GT_THREAD_STATUS
+  if (n >= 2) config[1] = readReg(0x913C);   // GEN12_GT_GEOMETRY_DSS_ENABLE
+  if (n >= 3) config[2] = readReg(0x13D84);  // GEN12_FORCEWAKE_ACK_GT
+  if (n >= 4) config[3] = 0;  // Ring status placeholder
+  
+  *outCount = n;
+  return kIOReturnSuccess;
+}
+
+// ===== Helper Methods =====
+
+bool XeService::initAcceleration() {
+  IOLog("XeService: Initializing acceleration framework\n");
+  
+  // Check if we have proper BAR0 mapping
+  if (!mmio) {
+    IOLog("XeService: No MMIO mapping available\n");
+    return false;
+  }
+  
+  // Check device ID
+  if (deviceId == 0) {
+    IOLog("XeService: Device ID not available\n");
+    return false;
+  }
+  
+  // Log device information
+  const char* deviceName = "Unknown Intel GPU";
+  if (deviceId == 0xA788) {
+    deviceName = "Intel Raptor Lake HX (32EU)";
+  } else if ((deviceId >= 0x4600 && deviceId <= 0x4693) ||
+             (deviceId >= 0x4680 && deviceId <= 0x4683) ||
+             (deviceId >= 0x4690 && deviceId <= 0x4693)) {
+    deviceName = "Intel Raptor Lake";
+  } else if (deviceId >= 0x46A0 && deviceId <= 0x46B3) {
+    deviceName = "Intel Alder Lake";
+  } else if (deviceId >= 0x9A40 && deviceId <= 0x9A78) {
+    deviceName = "Intel Tiger Lake";
+  }
+  
+  IOLog("XeService: Device: %s (0x%04x), Revision: 0x%02x\n", 
+        deviceName, deviceId, revisionId);
+  
+  // For now, just mark as prepared but not fully ready
+  // Full initialization would require:
+  // - GGTT setup
+  // - Ring buffer initialization
+  // - Interrupt handling
+  // - GuC firmware loading
+  
+  IOLog("XeService: Acceleration framework prepared (basic mode)\n");
+  return false;  // Return false to indicate preparation only
+}
+
+void XeService::cleanupBuffers() {
+  IOLog("XeService: Cleaning up buffers\n");
+  
+  for (int i = 0; i < bufferCount; i++) {
+    if (buffers[i].mem) {
+      buffers[i].mem->release();
+      buffers[i].mem = nullptr;
+      buffers[i].cookie = 0;
+      buffers[i].size = 0;
+    }
+  }
+  
+  bufferCount = 0;
+}
+

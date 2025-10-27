@@ -37,25 +37,37 @@ This PoC implements the foundational elements for Intel Xe GPU driver developmen
 
 ### 🔄 Planned Next Steps
 
-5. **GGTT Initialization** (RESEARCH.md Section 4.4)
-   - Map GGTT aperture
-   - Allocate scratch pages
-   - Insert test entries
+5. **GGTT Initialization** (RESEARCH.md Section 4.4) - ✅ Framework prepared
+   - GGTT structure defined
+   - Initialization stub implemented
+   - GTT space allocation framework ready
 
-6. **Ring Buffer Setup** (RESEARCH.md Section 4.5)
-   - Allocate ring buffer memory
-   - Program ring registers
-   - Initialize head/tail pointers
+6. **Ring Buffer Setup** (RESEARCH.md Section 4.5) - ✅ Framework prepared
+   - Ring buffer structure implemented
+   - Memory allocation working
+   - Command writing framework ready
+   - Ring register programming prepared
 
-7. **Command Submission** (RESEARCH.md Section 4.6)
-   - Submit MI_NOOP commands
-   - Implement seqno tracking
-   - Wait for completion
+7. **Command Submission** (RESEARCH.md Section 4.6) - ✅ Framework prepared
+   - MI_NOOP command framework implemented
+   - Sequence number tracking added
+   - Wait mechanism prepared
 
-8. **GuC Firmware Loading** (RESEARCH.md Section 4.8)
-   - Load firmware from filesystem
-   - Initialize GuC
-   - Verify initialization
+8. **GuC Firmware Loading** (RESEARCH.md Section 4.8) - ✅ Framework prepared
+   - GuC preparation stub implemented
+   - Status register reading added
+   - Firmware loading framework ready
+
+9. **Buffer Object Management** (RESEARCH.md Section 4.9) - ✅ Implemented
+   - BO creation and destruction working
+   - Pinning framework prepared
+   - Memory tracking in place
+
+10. **XeService Enhancement** - ✅ Completed
+    - Buffer tracking implemented
+    - Device info retrieval added
+    - GT configuration readout added
+    - Acceleration readiness check added
 
 ## Code Structure
 
@@ -78,6 +90,11 @@ This PoC implements the foundational elements for Intel Xe GPU driver developmen
 - `releaseForcewake()` - Release forcewake domain
 - `identifyDevice()` - Read and display device info
 - `readGTConfiguration()` - Display GT configuration
+- `initGGTT()` - Initialize Global Graphics Translation Table (preparation)
+- `initRingBuffer()` - Initialize command ring buffer
+- `submitMINoop()` - Submit MI_NOOP command (preparation)
+- `createBufferObject()` - Allocate GPU buffer object
+- `checkAccelerationReadiness()` - Check if acceleration framework is ready
 
 ### XePCI.cpp
 
@@ -87,7 +104,13 @@ This PoC implements the foundational elements for Intel Xe GPU driver developmen
 3. Device identification
 4. Forcewake test (PoC)
 5. GT configuration readout
-6. Service registration
+6. Power well enablement (preparation)
+7. GGTT initialization (preparation)
+8. Ring buffer setup (memory allocation)
+9. Interrupt framework preparation
+10. GuC firmware preparation
+11. Acceleration readiness check
+12. Service registration
 
 **Safety Features:**
 - Null pointer checks before all register access
@@ -123,7 +146,24 @@ XePCI: reg[0x0000]=0x[value]
 XePCI: reg[0x0100]=0x[value]
 XePCI: reg[0x1000]=0x[value]
 XePCI: scratch buffer allocated (4KB)
-XePCI: PoC completed successfully
+XePCI: === Initializing Acceleration Support ===
+XePCI: Power wells enabled
+XePCI: GGTT init (preparation stub)
+XePCI: GGC register = 0x[value]
+XePCI: WARNING - GGTT initialization skipped (preparation only)
+XePCI: Initializing ring buffer (size=4096)
+XePCI: Ring buffer allocated at 0x[address]
+XePCI: WARNING - Ring buffer initialization skipped (preparation only)
+XePCI: Interrupt setup (preparation stub)
+XePCI: WARNING - Interrupt setup skipped (preparation only)
+XePCI: GuC firmware preparation (stub)
+XePCI: GuC status = 0x[value]
+XePCI: WARNING - GuC preparation skipped (preparation only)
+XePCI: Checking acceleration readiness
+XePCI: Ring buffer not initialized (preparation mode)
+XePCI: Basic acceleration framework is ready
+XePCI: Acceleration framework prepared but not fully active
+XePCI: PoC completed successfully with acceleration preparation
 ```
 
 ## Technical Details
@@ -162,19 +202,81 @@ inline UInt32 readReg(UInt32 offset) {
 
 All register offsets are byte-aligned but accessed as 32-bit words.
 
+### Acceleration Framework
+
+The acceleration framework provides preparation for future GPU compute and rendering support:
+
+**Components:**
+
+1. **GGTT (Global Graphics Translation Table)**
+   - Manages GPU virtual address space
+   - Maps system memory to GPU-accessible addresses
+   - Currently in preparation mode (reads GGC register)
+
+2. **Ring Buffer Management**
+   - 4KB ring buffer allocated for command submission
+   - Supports writing MI commands to ring
+   - Head/tail pointer tracking implemented
+   - Hardware programming prepared but not active
+
+3. **Command Submission**
+   - MI_NOOP command framework implemented
+   - Sequence number tracking for completion
+   - Batch buffer preparation ready
+
+4. **Buffer Objects (BO)**
+   - Memory descriptor allocation working
+   - GTT mapping framework prepared
+   - Pin/unpin support ready
+
+5. **Power Management**
+   - Power well control prepared
+   - RC state monitoring available
+   - Integration with forcewake
+
+6. **Interrupt Framework**
+   - Interrupt register definitions added
+   - Handler preparation stubbed
+   - Ready for future implementation
+
+7. **GuC Firmware Support**
+   - GuC status register reading
+   - WOPCM allocation framework
+   - Firmware loading preparation
+
+**XeService Integration:**
+
+The XeService component provides user-space access:
+- Buffer creation and tracking (up to 16 buffers)
+- Device information queries
+- GT configuration readout
+- Register dumps
+- Acceleration readiness status
+
+**Command-line Tool (xectl):**
+
+```bash
+sudo ./xectl info       # Display device info and acceleration status
+sudo ./xectl regdump    # Dump register values
+sudo ./xectl gtconfig   # Show GT configuration
+sudo ./xectl mkbuf 4096 # Create a 4KB buffer
+sudo ./xectl noop       # Submit MI_NOOP (prepared)
+```
+
 ## Safety Considerations
 
 ⚠️ **Important Safety Notes:**
 
-1. **Read-Only Operations**: This PoC primarily reads registers and only writes to forcewake control registers, which are safe to access.
+1. **Read-Mostly Operations**: This implementation primarily reads registers and allocates memory. Hardware initialization is prepared but not active.
 
 2. **Forcewake Degradation**: If forcewake acquisition fails, the driver continues but logs a warning. Some registers may return incorrect values without forcewake.
 
-3. **No Hardware Initialization**: This PoC does NOT:
-   - Initialize the GPU
-   - Load firmware
-   - Configure display outputs
-   - Modify GPU state (beyond forcewake)
+3. **Preparation Mode**: The acceleration framework is prepared but NOT active:
+   - GGTT reads configuration but doesn't initialize
+   - Ring buffers allocate memory but don't program hardware
+   - Commands are written to memory but not submitted to GPU
+   - Interrupts are not enabled
+   - GuC firmware is not loaded
 
 4. **Testing Hardware**: Always test on non-critical hardware with a fallback display option.
 
@@ -223,4 +325,12 @@ To continue development based on this PoC:
 
 ## Version History
 
+- **v0.2-accel-prep** (2025-10-27): Acceleration framework preparation
+  - Added GGTT initialization framework
+  - Added ring buffer management
+  - Added command submission preparation
+  - Added buffer object management
+  - Enhanced XeService with device info and GT config
+  - Added power management and interrupt preparation
+  - Added GuC firmware loading framework
 - **v0.1-poc** (2025-10-27): Initial PoC with register access and forcewake

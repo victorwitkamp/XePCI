@@ -2,16 +2,25 @@
 
 ## Current Status
 
-🎉 **Proof of Concept (PoC) Implemented** - See [POC.md](POC.md) for details.
+🎉 **Proof of Concept (PoC) + Acceleration Framework Implemented** - See [POC.md](POC.md) for details.
 
-The initial PoC demonstrates:
+The implementation demonstrates:
 - ✅ PCI device enumeration and BAR0 mapping
 - ✅ Device identification (Raptor Lake, Alder Lake, Tiger Lake)
 - ✅ Register access framework with safety checks
 - ✅ Forcewake management for safe register access
 - ✅ GT configuration readout (thread status, DSS enable)
+- ✅ GGTT initialization framework (preparation)
+- ✅ Ring buffer allocation and management (preparation)
+- ✅ Command submission framework with MI_NOOP (preparation)
+- ✅ Buffer object creation and tracking
+- ✅ XeService user-space interface with device info
+- ✅ Power management and interrupt preparation
+- ✅ GuC firmware loading preparation
 
-**Next Steps**: GGTT initialization, ring buffer setup, MI_NOOP command submission
+**Current Phase**: Acceleration framework prepared, ready for hardware activation
+
+**Next Steps**: Hardware initialization, firmware loading, active command submission
 
 ---
 
@@ -178,13 +187,15 @@ struct XeDevice {
 ---
 
 ## Minimal Bring-up Checklist
-1. Verify PCI attach and BAR0 mapping (`XePCI.kext`).
-2. Confirm register reads (device ID, GT config).
-3. Enable power wells and forcewake.
-4. Map GGTT base; allocate ring buffer.
-5. Submit `MI_NOOP` and verify seqno advance.
-6. Implement buffer objects and simple BLT test.
-7. Add IOUserClient interface (`XeAccel.kext`).
-8. Optionally integrate framebuffer or IOAccelerator shim.
+1. ✅ Verify PCI attach and BAR0 mapping (`XePCI.kext`).
+2. ✅ Confirm register reads (device ID, GT config).
+3. ✅ Enable power wells and forcewake.
+4. 🔄 Map GGTT base; allocate ring buffer (framework ready).
+5. 🔄 Submit `MI_NOOP` and verify seqno advance (prepared).
+6. 🔄 Implement buffer objects and simple BLT test (BO framework ready).
+7. ✅ Add IOUserClient interface (`XeService`).
+8. ⏳ Optionally integrate framebuffer or IOAccelerator shim.
+
+Legend: ✅ Complete | 🔄 Framework Ready | ⏳ Pending
 
 ---

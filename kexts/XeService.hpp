@@ -14,6 +14,15 @@ enum {
   kMethodSubmit       = 1,
   kMethodWait         = 2,
   kMethodReadReg      = 3,
+  kMethodGetDeviceInfo = 4,
+  kMethodGetGTConfig  = 5,
+};
+
+// Simple buffer tracking structure
+struct XeBufferHandle {
+  IOBufferMemoryDescriptor *mem;
+  uint64_t cookie;
+  uint32_t size;
 };
 
 class XeService;
@@ -38,6 +47,19 @@ private:
   IOPCIDevice *pci {nullptr};
   IOMemoryMap *bar0 {nullptr};
   volatile uint32_t *mmio {nullptr};
+  
+  // Device information
+  uint16_t deviceId {0};
+  uint16_t revisionId {0};
+  
+  // Buffer tracking (simple array for now)
+  static constexpr int kMaxBuffers = 16;
+  XeBufferHandle buffers[kMaxBuffers];
+  int bufferCount {0};
+  
+  // Acceleration state
+  bool accelReady {false};
+  
 public:
   bool init(OSDictionary* prop = nullptr) override;
   IOService* probe(IOService* provider, SInt32* score) override;
@@ -53,6 +75,23 @@ public:
   IOReturn ucCreateBuffer(uint32_t bytes, uint64_t* outCookie);
   IOReturn ucSubmitNoop();
   IOReturn ucWait(uint32_t timeoutMs);
+  IOReturn ucGetDeviceInfo(uint32_t* info, uint32_t* outCount);
+  IOReturn ucGetGTConfig(uint32_t* config, uint32_t* outCount);
+
+private:
+  // Helper methods
+  inline uint32_t readReg(uint32_t offset) {
+    if (!mmio) return 0xFFFFFFFF;
+    return mmio[offset / 4];
+  }
+  
+  inline void writeReg(uint32_t offset, uint32_t value) {
+    if (!mmio) return;
+    mmio[offset / 4] = value;
+  }
+  
+  bool initAcceleration();
+  void cleanupBuffers();
 };
 
 #endif // XESERVICE_HPP
