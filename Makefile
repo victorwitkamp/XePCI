@@ -27,11 +27,10 @@ CXX = clang++
 CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-fno-rtti -fno-exceptions \
 	-fno-builtin -fno-common \
-	-mkernel -nostdlib -nostdinc++ \
+	-mkernel -nostdlib \
 	-D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
 	-DPRODUCT_NAME=XePCI -DMODULE_VERSION=\"$(VERSION)\" \
 	-isysroot $(KERNEL_SDK) \
-	-isystem $(KERNEL_SDK)/usr/include \
 	-iframework $(KERNEL_SDK)/System/Library/Frameworks \
 	-I$(LILU_SDK) \
 	-Ikexts
