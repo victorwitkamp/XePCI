@@ -17,12 +17,14 @@ static void pluginStop() {
   DBGLOG("XeLilu", "pluginStop");
 }
 
-PluginConfiguration ADDPR(config) = {
-  kPluginId,
-  parseModuleVersion("1.0.0"),
-  LiluAPI::AllowNormal | LiluAPI::AllowInstallerRecovery,
-  nullptr, 0,
-  nullptr, 0,
-  pluginStart,
-  pluginStop
-};
+PluginConfiguration ADDPR(config) = [] {
+  PluginConfiguration config{};
+
+  config.product = kPluginId;
+  config.version = parseModuleVersion("1.0.0");
+  config.compatibility = LiluAPI::AllowNormal | LiluAPI::AllowInstallerRecovery;
+  config.start = pluginStart;
+  config.stop = pluginStop;
+
+  return config;
+}();
