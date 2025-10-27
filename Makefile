@@ -20,7 +20,7 @@ PLIST = kexts/Info.plist
 
 # Lilu SDK paths - adjust based on your Lilu installation
 LILU_SDK ?= /usr/local/include/Lilu
-KERNEL_SDK ?= /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+KERNEL_SDK ?= /Library/Developer/SDKs/MacKernelSDK
 
 # Compiler and linker flags
 CXX = clang++
