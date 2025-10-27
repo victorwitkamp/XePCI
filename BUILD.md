@@ -47,6 +47,9 @@ git clone https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
 sudo mkdir -p /Library/Developer/SDKs
 sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
 
+# Clean up temporary directory
+rm -rf /tmp/MacKernelSDK
+
 # Verify installation
 ls /Library/Developer/SDKs/MacKernelSDK/Headers/
 ```
@@ -219,7 +222,7 @@ The Makefile provides several targets:
 fatal error: 'libkern/libkern.h' file not found
 ```
 
-**Solution:** Install MacKernelSDK (see [Prerequisites](#prerequisites)). The Makefile requires MacKernelSDK headers to be available at `/Library/Developer/SDKs/MacKernelSDK`.
+**Solution:** Install MacKernelSDK (see [Prerequisites](#prerequisites)). The Makefile requires MacKernelSDK headers to be available at `/Library/Developer/SDKs/MacKernelSDK`. The Makefile includes these headers via the `-I$(KERNEL_SDK)/Headers` compiler flag, which allows the compiler to locate system headers like `libkern/libkern.h` at `/Library/Developer/SDKs/MacKernelSDK/Headers/libkern/libkern.h`.
 
 #### Error: Lilu headers not found
 
