@@ -4,15 +4,6 @@
 #include <IOKit/IOUserClient.h>
 #include "XeService.hpp"
 
-// Keep selector IDs in one place. If XeService.hpp already defines these,
-// you can remove this copy, or guard it with #ifndefs.
-enum {
-  kMethodCreateBuffer = 0,   // in:  [0]=bytes (u64)    out: [0]=cookie (u64)
-  kMethodSubmit       = 1,   // in:  (none)             out: (none)  -- NOOP submit (stub)
-  kMethodWait         = 2,   // in:  [0]=timeout_ms(u64) out: (none)
-  kMethodReadReg      = 3,   // in:  (none)             out: up to 8 u64 dwords (MMIO reads)
-};
-
 class XeUserClient final : public IOUserClient {
   OSDeclareDefaultStructors(XeUserClient)
 
@@ -30,8 +21,8 @@ private:
 
 public:
   // IOUserClient overrides
-  bool initWithTask(task_t owningTask, void* securityID, UInt32 type) override;
-  bool start(IOService* provider) override;
+  bool     initWithTask(task_t owningTask, void* securityID, UInt32 type) override;
+  bool     start(IOService* provider) override;
   IOReturn clientClose() override;
 
   IOReturn externalMethod(uint32_t selector,
