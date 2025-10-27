@@ -30,9 +30,10 @@ CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-mkernel -nostdlib -nostdinc++ \
 	-D__KERNEL__ -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE \
 	-DPRODUCT_NAME=XePCI -DMODULE_VERSION=\"$(VERSION)\" \
-	-I$(LILU_SDK) \
+	-isysroot $(KERNEL_SDK) \
 	-I$(KERNEL_SDK)/System/Library/Frameworks/Kernel.framework/Headers \
 	-I$(KERNEL_SDK)/usr/include \
+	-I$(LILU_SDK) \
 	-Ikexts
 
 LDFLAGS = -Xlinker -kext \
