@@ -568,7 +568,7 @@ bool org_yourorg_XePCI::initGGTT() {
     // In a full implementation, we'd maintain a free list or bitmap
     // For now, simple linear allocation starting at offset 0
     // Reserve first 16MB for system/GuC use (common practice)
-    ggtt.nextFreeOffset = 16 * 1024 * 1024;  // Start after reserved region
+    ggtt.nextFreeOffset = GGTT_RESERVED_SIZE;  // Start after reserved region
     ggtt.initialized = true;
     
     IOLog("XePCI: GGTT initialized successfully\n");
@@ -593,7 +593,7 @@ UInt64 org_yourorg_XePCI::allocateGTTSpace(UInt32 size) {
     }
     
     // Align size to page boundary (4KB)
-    UInt32 alignedSize = (size + 4095) & ~4095;
+    UInt32 alignedSize = (size + PAGE_MASK_4K) & ~PAGE_MASK_4K;
     
     // Check if we have enough space
     if (ggtt.nextFreeOffset + alignedSize > ggtt.size) {
@@ -963,7 +963,7 @@ bool org_yourorg_XePCI::prepareGuCFirmware() {
     IOLog("XePCI: GuC WOPCM size = 0x%08x\n", wopcmSize);
     
     // Check if GuC is already running (some platforms auto-load)
-    if (gucStatus & 0x1) {  // Bit 0 indicates GuC is initialized
+    if (gucStatus & GUC_STATUS_INITIALIZED) {  // Bit 0 indicates GuC is initialized
         IOLog("XePCI: GuC appears to be already initialized\n");
     } else {
         IOLog("XePCI: GuC requires firmware loading\n");

@@ -236,7 +236,7 @@ IOReturn XeService::ucSubmitNoop() {
   IOLog("XeService: Ring state - HEAD=0x%x TAIL=0x%x CTL=0x%x\n", ringHead, ringTail, ringCtl);
   
   // Check if ring is in a valid state (RING_VALID bit set)
-  if (!(ringCtl & 0x1)) {
+  if (!(ringCtl & RING_VALID)) {
     IOLog("XeService: Ring not initialized - submission deferred\n");
     // Return success anyway to allow userspace flow testing
     return kIOReturnSuccess;
@@ -264,7 +264,7 @@ IOReturn XeService::ucWait(uint32_t timeoutMs) {
     uint32_t ringCtl = readReg(0x02034);  // GEN12_RING_CTL_RCS0
     
     // Check RING_IDLE bit (bit 2)
-    if (ringCtl & 0x4) {
+    if (ringCtl & RING_IDLE) {
       IOLog("XeService: GPU idle detected\n");
       return kIOReturnSuccess;
     }

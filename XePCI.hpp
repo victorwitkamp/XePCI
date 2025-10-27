@@ -69,6 +69,14 @@
 #define MI_LOAD_REGISTER_IMM            (0x22 << 23)
 #define MI_FLUSH_DW                     (0x26 << 23)
 
+// Memory Management Constants
+#define PAGE_SIZE_4K                    4096
+#define PAGE_MASK_4K                    0xFFF
+#define GGTT_RESERVED_SIZE              (16 * 1024 * 1024)  // 16MB reserved for system/GuC
+
+// GuC Status Bits
+#define GUC_STATUS_INITIALIZED          (1 << 0)
+
 // Forward declarations for structures
 struct XeRing;
 struct XeBufferObject;
