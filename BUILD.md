@@ -18,7 +18,8 @@ This document describes how to build the XePCI kernel extension (kext) for macOS
 
 1. **macOS** - Version 10.15 (Catalina) or later recommended
 2. **Xcode Command Line Tools** - For compilation
-3. **Lilu SDK** - Required headers for Lilu plugin development
+3. **MacKernelSDK** - Kernel headers for kernel extension development
+4. **Lilu SDK** - Required headers for Lilu plugin development
 
 ### Installing Prerequisites
 
@@ -34,7 +35,26 @@ xcode-select -p
 # Should output: /Library/Developer/CommandLineTools
 ```
 
-#### 2. Install Lilu SDK Headers
+#### 2. Install MacKernelSDK
+
+Clone and install the MacKernelSDK:
+
+```bash
+# Clone MacKernelSDK
+git clone https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
+
+# Install to standard SDK location
+sudo mkdir -p /Library/Developer/SDKs
+sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
+
+# Clean up temporary directory
+rm -rf /tmp/MacKernelSDK
+
+# Verify installation
+ls /Library/Developer/SDKs/MacKernelSDK/Headers/
+```
+
+#### 3. Install Lilu SDK Headers
 
 Clone the Lilu repository and install headers:
 
@@ -195,6 +215,14 @@ The Makefile provides several targets:
 ## Troubleshooting
 
 ### Common Build Errors
+
+#### Error: libkern/libkern.h not found
+
+```
+fatal error: 'libkern/libkern.h' file not found
+```
+
+**Solution:** Install MacKernelSDK (see [Prerequisites](#prerequisites)). The Makefile requires MacKernelSDK headers to be available at `/Library/Developer/SDKs/MacKernelSDK`. The Makefile includes these headers via the `-I$(KERNEL_SDK)/Headers` compiler flag, which allows the compiler to locate system headers like `libkern/libkern.h` at `/Library/Developer/SDKs/MacKernelSDK/Headers/libkern/libkern.h`.
 
 #### Error: Lilu headers not found
 
