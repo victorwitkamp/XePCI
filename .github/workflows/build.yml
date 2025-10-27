@@ -42,11 +42,9 @@ jobs:
         echo "Cloning Lilu for SDK headers..."
         git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
         
-        # Copy complete Lilu SDK to standard location (including dependencies)
+        # Copy entire Lilu directory structure to preserve symlinks
         sudo mkdir -p /usr/local/include/Lilu
-        sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
-        sudo cp -R /tmp/Lilu/Lilu/hde /usr/local/include/Lilu/
-        sudo cp -R /tmp/Lilu/Lilu/capstone /usr/local/include/Lilu/
+        sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/Lilu/
         
         echo "Lilu SDK installed at /usr/local/include/Lilu"
         ls -la /usr/local/include/Lilu/Headers/ || true
@@ -149,9 +147,7 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/acidanthera/Lilu.git /tmp/Lilu
         sudo mkdir -p /usr/local/include/Lilu
-        sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
-        sudo cp -R /tmp/Lilu/Lilu/hde /usr/local/include/Lilu/
-        sudo cp -R /tmp/Lilu/Lilu/capstone /usr/local/include/Lilu/
+        sudo cp -R /tmp/Lilu/Lilu/* /usr/local/include/Lilu/
     
     - name: Build debug version
       run: |
