@@ -22,7 +22,12 @@ Implement a minimal Intel Xe (Gen12, Tiger / Alder / Raptor Lake) iGPU driver fo
 3. Ring-buffer command submission (MI_NOOP → BLT → compute)
 4. Optional framebuffer or IOAccelerator interface
 
-Specifically the goal is to make it work on Intel Raptor Lake-P Xe Graphics (for ASUS GI814JI)
+**Target Device**: Intel Raptor Lake HX (ASUS GI814JI)
+- **Device ID**: 0xA788
+- **Revision**: B-0 (0x04)
+- **Configuration**: HX 8P+16E with 32EU (Execution Units)
+- **Architecture**: Gen 12.2 (Xe-LP)
+
 ---
 
 ## Components

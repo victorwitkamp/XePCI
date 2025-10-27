@@ -37,11 +37,13 @@
                 <!-- match PCI vendor 0x8086, class 0x03 (Display controller), subclass 0x00 (VGA) -->
                 <key>idVendor</key>
                 <integer>32902</integer><!-- 0x8086 -->
+                
+                <!-- Specific match for Raptor Lake HX (Device ID 0xA788, 32EU) -->
+                <key>idProduct</key>
+                <integer>42888</integer><!-- 0xA788 = 42888 decimal -->
+                
                 <key>class-code</key>
-                <data>AwA=</data><!-- 0x03 0x00 (base class 3 = display) in big-endian binary — this is commonly used by examples; adjust if needed -->
-
-                <!-- optional specific device id (uncomment to hard-match) -->
-                <!-- <key>idProduct</key><integer>XXXXX</integer> -->
+                <data>AwA=</data><!-- 0x03 0x00 (base class 3 = display) in big-endian binary -->
 
                 <key>CFBundleIdentifier</key>
                 <string>org.yourorg.XePCI</string>

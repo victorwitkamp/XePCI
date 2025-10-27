@@ -664,7 +664,13 @@ if (timeout == 0) {
 
 ```cpp
 // Intel Xe Graphics Device IDs
-// Raptor Lake
+
+// Raptor Lake HX - TARGET DEVICE for XePCI
+// ASUS GI814JI: HX 8P+16E with 32EU, Revision B-0
+#define INTEL_RPL_HX_TARGET \
+    0xA788  // Raptor Lake HX (32EU) - Primary target device
+
+// Raptor Lake (standard mobile/desktop)
 #define INTEL_RPL_P_IDS \
     0x4600, 0x4601, 0x4602, 0x4603, \
     0x4680, 0x4681, 0x4682, 0x4683, \

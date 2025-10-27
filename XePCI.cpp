@@ -170,13 +170,28 @@ bool org_yourorg_XePCI::identifyDevice() {
     IOLog("XePCI: Device identified: %s (0x%04x), Revision: 0x%02x\n", 
           name, deviceId, revisionId);
     
+    // Special notification for target device (ASUS GI814JI - Raptor Lake HX)
+    if (deviceId == 0xA788) {
+        IOLog("XePCI: *** TARGET DEVICE DETECTED ***\n");
+        IOLog("XePCI: Raptor Lake HX 8P+16E with 32EU configuration\n");
+        if (revisionId == 4) {
+            IOLog("XePCI: Revision B-0 (expected) confirmed\n");
+        } else {
+            IOLog("XePCI: WARNING - Revision 0x%02x detected (expected 0x04 / B-0)\n", revisionId);
+        }
+    }
+    
     return true;
 }
 
 const char* org_yourorg_XePCI::getDeviceName(UInt16 devId) {
     // From RESEARCH.md Section 5.5 - Reference Device IDs
     switch (devId) {
-        // Raptor Lake
+        // Raptor Lake HX - Target device for this project
+        case 0xA788:
+            return "Intel Raptor Lake HX (32EU)";
+        
+        // Raptor Lake (standard mobile/desktop)
         case 0x4600: case 0x4601: case 0x4602: case 0x4603:
         case 0x4680: case 0x4681: case 0x4682: case 0x4683:
         case 0x4690: case 0x4691: case 0x4692: case 0x4693:

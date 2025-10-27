@@ -4,6 +4,13 @@
 
 This PoC implements the foundational elements for Intel Xe GPU driver development on macOS, based on the research documented in [RESEARCH.md](RESEARCH.md).
 
+**Target Hardware**: 
+- **Device**: ASUS GI814JI with Intel Raptor Lake HX
+- **GPU Device ID**: 0xA788
+- **Revision**: B-0 (0x04)
+- **Configuration**: HX 8P+16E CPU with 32EU iGPU
+- **Architecture**: Gen 12.2 (Xe-LP)
+
 ## Implementation Status
 
 ### ✅ Completed (This PoC)
@@ -90,14 +97,17 @@ This PoC implements the foundational elements for Intel Xe GPU driver developmen
 
 ## Usage and Expected Output
 
-When the kext loads, you should see output like:
+When the kext loads on the target device (0xA788 - Raptor Lake HX), you should see output like:
 
 ```
 XePCI: init
-XePCI: probe vendor=0x8086 device=0x4680
+XePCI: probe vendor=0x8086 device=0xa788
 XePCI: start
 XePCI: BAR0 mapped at 0x[address], size=[size] bytes
-XePCI: Device identified: Intel Raptor Lake (0x4680), Revision: 0x[rev]
+XePCI: Device identified: Intel Raptor Lake HX (32EU) (0xa788), Revision: 0x04
+XePCI: *** TARGET DEVICE DETECTED ***
+XePCI: Raptor Lake HX 8P+16E with 32EU configuration
+XePCI: Revision B-0 (expected) confirmed
 XePCI: === Starting PoC - Forcewake Test ===
 XePCI: Acquiring forcewake for domains 0x1
 XePCI: GT forcewake acknowledged
@@ -133,9 +143,12 @@ Forcewake prevents the GPU from power-gating specific domains while they're bein
 ### Device ID Recognition
 
 Supports the following Intel GPU families:
+- **Raptor Lake HX** (Gen 12.2) - **PRIMARY TARGET**: 0xA788 (32EU, HX 8P+16E)
 - **Raptor Lake** (Gen 12.7): 0x4600-0x4693
 - **Alder Lake** (Gen 12): 0x46A0-0x46B3, 0x4626-0x462A
 - **Tiger Lake** (Gen 12): 0x9A40-0x9A78
+
+The driver specifically targets **device 0xA788** (Raptor Lake HX on ASUS GI814JI) with revision B-0 (0x04).
 
 ### Register Access Pattern
 
