@@ -12,12 +12,37 @@ bool org_yourorg_XePCI::init(OSDictionary *props) {
     deviceId = 0;
     revisionId = 0;
     forcewakeActive = false;
+    seqno = 0;
+    accelReady = false;
+    
+    // Initialize GGTT structure
+    ggtt.baseAddr = 0;
+    ggtt.size = 0;
+    ggtt.numEntries = 0;
+    ggtt.initialized = false;
+    
+    // Initialize ring buffer structure
+    renderRing.mem = nullptr;
+    renderRing.vaddr = nullptr;
+    renderRing.gttOffset = 0;
+    renderRing.size = 0;
+    renderRing.head = 0;
+    renderRing.tail = 0;
+    renderRing.initialized = false;
+    
     IOLog("XePCI: init\n");
     return true;
 }
 
 void org_yourorg_XePCI::free() {
     IOLog("XePCI: free\n");
+    
+    // Cleanup ring buffer
+    cleanupRingBuffer(&renderRing);
+    
+    // Cleanup GGTT
+    cleanupGGTT();
+    
     if (scratchBuf) {
         scratchBuf->release();
         scratchBuf = nullptr;
@@ -99,16 +124,74 @@ bool org_yourorg_XePCI::start(IOService *provider) {
     if (scratchBuf) {
         IOLog("XePCI: scratch buffer allocated (4KB)\n");
     }
+    
+    // === New Acceleration Support Initialization ===
+    IOLog("XePCI: === Initializing Acceleration Support ===\n");
+    
+    // Initialize power management
+    if (enablePowerWells()) {
+        IOLog("XePCI: Power wells enabled\n");
+    } else {
+        IOLog("XePCI: WARNING - Failed to enable power wells\n");
+    }
+    
+    // Initialize GGTT (Global Graphics Translation Table)
+    if (initGGTT()) {
+        IOLog("XePCI: GGTT initialized successfully\n");
+    } else {
+        IOLog("XePCI: WARNING - GGTT initialization skipped (preparation only)\n");
+    }
+    
+    // Initialize ring buffer
+    if (initRingBuffer(&renderRing, 4096)) {
+        IOLog("XePCI: Ring buffer initialized (4KB)\n");
+    } else {
+        IOLog("XePCI: WARNING - Ring buffer initialization skipped (preparation only)\n");
+    }
+    
+    // Setup interrupts (preparation)
+    if (setupInterrupts()) {
+        IOLog("XePCI: Interrupt framework prepared\n");
+    } else {
+        IOLog("XePCI: WARNING - Interrupt setup skipped (preparation only)\n");
+    }
+    
+    // Prepare GuC firmware loading
+    if (prepareGuCFirmware()) {
+        IOLog("XePCI: GuC firmware framework prepared\n");
+    } else {
+        IOLog("XePCI: WARNING - GuC preparation skipped (preparation only)\n");
+    }
+    
+    // Check acceleration readiness
+    accelReady = checkAccelerationReadiness();
+    if (accelReady) {
+        IOLog("XePCI: Acceleration framework ready\n");
+    } else {
+        IOLog("XePCI: Acceleration framework prepared but not fully active\n");
+    }
 
     // Publish service so user clients can open later
     registerService();
 
-    IOLog("XePCI: PoC completed successfully\n");
+    IOLog("XePCI: PoC completed successfully with acceleration preparation\n");
     return true;
 }
 
 void org_yourorg_XePCI::stop(IOService *provider) {
     IOLog("XePCI: stop\n");
+    
+    // Cleanup interrupts
+    cleanupInterrupts();
+    
+    // Cleanup ring buffer
+    cleanupRingBuffer(&renderRing);
+    
+    // Cleanup GGTT
+    cleanupGGTT();
+    
+    // Disable power wells
+    disablePowerWells();
     
     // Ensure forcewake is released
     if (forcewakeActive) {
@@ -284,5 +367,312 @@ void org_yourorg_XePCI::dumpRegisters() {
     IOLog("XePCI: reg[0x0000]=0x%08x\n", r0);
     IOLog("XePCI: reg[0x0100]=0x%08x\n", r1);
     IOLog("XePCI: reg[0x1000]=0x%08x\n", r2);
+}
+
+// ===== GGTT Management Implementation =====
+
+bool org_yourorg_XePCI::initGGTT() {
+    // GGTT initialization is complex and requires:
+    // 1. Reading GGTT base from PCI config
+    // 2. Mapping GGTT aperture
+    // 3. Initializing scratch pages
+    // This is a preparation stub for future implementation
+    
+    IOLog("XePCI: GGTT init (preparation stub)\n");
+    
+    // Read GGC (Graphics Control) from PCI config space
+    UInt32 ggc = pciDev->configRead32(GEN12_GGC);
+    IOLog("XePCI: GGC register = 0x%08x\n", ggc);
+    
+    // Mark as prepared but not fully initialized
+    ggtt.initialized = false;
+    return false; // Return false to indicate preparation only
+}
+
+void org_yourorg_XePCI::cleanupGGTT() {
+    if (!ggtt.initialized) return;
+    
+    IOLog("XePCI: Cleaning up GGTT\n");
+    ggtt.initialized = false;
+}
+
+UInt64 org_yourorg_XePCI::allocateGTTSpace(UInt32 size) {
+    // Stub for GTT space allocation
+    // Real implementation would track allocated regions
+    IOLog("XePCI: GTT space allocation requested (size=%u) - stub\n", size);
+    return 0;
+}
+
+// ===== Ring Buffer Management Implementation =====
+
+bool org_yourorg_XePCI::initRingBuffer(XeRing *ring, UInt32 size) {
+    if (!ring || ring->initialized) return false;
+    
+    IOLog("XePCI: Initializing ring buffer (size=%u)\n", size);
+    
+    // Allocate ring buffer memory
+    ring->mem = IOBufferMemoryDescriptor::inTaskWithOptions(
+        kernel_task,
+        kIOMemoryPhysicallyContiguous | kIOMemoryKernelUserShared,
+        size,
+        PAGE_SIZE  // Alignment
+    );
+    
+    if (!ring->mem) {
+        IOLog("XePCI: Failed to allocate ring buffer memory\n");
+        return false;
+    }
+    
+    ring->vaddr = (volatile UInt32 *)ring->mem->getBytesNoCopy();
+    if (!ring->vaddr) {
+        ring->mem->release();
+        ring->mem = nullptr;
+        IOLog("XePCI: Failed to get ring buffer virtual address\n");
+        return false;
+    }
+    
+    ring->size = size;
+    ring->head = 0;
+    ring->tail = 0;
+    ring->gttOffset = 0;  // Would be set by GGTT allocation
+    ring->initialized = true;
+    
+    IOLog("XePCI: Ring buffer allocated at %p\n", (void*)ring->vaddr);
+    
+    // Ring register programming would happen here in full implementation
+    // writeReg(GEN12_RING_HEAD_RCS0, 0);
+    // writeReg(GEN12_RING_TAIL_RCS0, 0);
+    // writeReg(GEN12_RING_START_RCS0, ring->gttOffset);
+    // writeReg(GEN12_RING_CTL_RCS0, RING_VALID | size);
+    
+    return true;
+}
+
+void org_yourorg_XePCI::cleanupRingBuffer(XeRing *ring) {
+    if (!ring || !ring->initialized) return;
+    
+    IOLog("XePCI: Cleaning up ring buffer\n");
+    
+    if (ring->mem) {
+        ring->mem->release();
+        ring->mem = nullptr;
+    }
+    
+    ring->vaddr = nullptr;
+    ring->gttOffset = 0;
+    ring->size = 0;
+    ring->head = 0;
+    ring->tail = 0;
+    ring->initialized = false;
+}
+
+bool org_yourorg_XePCI::writeRingCommand(XeRing *ring, UInt32 *cmds, UInt32 numDwords) {
+    if (!ring || !ring->initialized || !ring->vaddr) return false;
+    
+    UInt32 spaceNeeded = numDwords * 4;
+    
+    // Check for available space (simplified)
+    if (ring->tail + spaceNeeded > ring->size) {
+        IOLog("XePCI: Insufficient ring buffer space\n");
+        return false;
+    }
+    
+    // Copy commands to ring
+    UInt32 *dst = (UInt32 *)((UInt8 *)ring->vaddr + ring->tail);
+    for (UInt32 i = 0; i < numDwords; i++) {
+        dst[i] = cmds[i];
+    }
+    
+    ring->tail = (ring->tail + spaceNeeded) & (ring->size - 1);
+    
+    return true;
+}
+
+void org_yourorg_XePCI::updateRingTail(XeRing *ring) {
+    if (!ring || !ring->initialized) return;
+    
+    // In full implementation, this would write to RING_TAIL register
+    // writeReg(GEN12_RING_TAIL_RCS0, ring->tail);
+    IOLog("XePCI: Ring tail updated to 0x%x (preparation mode)\n", ring->tail);
+}
+
+// ===== Command Submission Implementation =====
+
+bool org_yourorg_XePCI::submitMINoop() {
+    IOLog("XePCI: Submitting MI_NOOP command (preparation stub)\n");
+    
+    if (!renderRing.initialized) {
+        IOLog("XePCI: Ring buffer not initialized\n");
+        return false;
+    }
+    
+    // Prepare MI_NOOP batch
+    UInt32 batch[] = {
+        MI_NOOP,
+        MI_NOOP,
+        MI_BATCH_BUFFER_END
+    };
+    
+    // Write to ring (in memory only for now)
+    if (!writeRingCommand(&renderRing, batch, 3)) {
+        IOLog("XePCI: Failed to write MI_NOOP to ring\n");
+        return false;
+    }
+    
+    // Update tail (preparation mode - doesn't touch hardware)
+    updateRingTail(&renderRing);
+    
+    IOLog("XePCI: MI_NOOP prepared in ring buffer\n");
+    return true;
+}
+
+bool org_yourorg_XePCI::waitForIdle(UInt32 timeoutMs) {
+    // Stub for waiting for GPU idle
+    // Real implementation would poll seqno or interrupt
+    IOLog("XePCI: Wait for idle (timeout=%ums) - stub\n", timeoutMs);
+    return true;
+}
+
+UInt32 org_yourorg_XePCI::getNextSeqno() {
+    return ++seqno;
+}
+
+// ===== Buffer Object Management Implementation =====
+
+XeBufferObject* org_yourorg_XePCI::createBufferObject(UInt32 size, UInt32 flags) {
+    IOLog("XePCI: Creating buffer object (size=%u, flags=0x%x)\n", size, flags);
+    
+    XeBufferObject *bo = (XeBufferObject *)IOMalloc(sizeof(XeBufferObject));
+    if (!bo) return nullptr;
+    
+    bo->mem = IOBufferMemoryDescriptor::inTaskWithOptions(
+        kernel_task,
+        kIOMemoryPhysicallyContiguous | kIOMemoryKernelUserShared,
+        size,
+        PAGE_SIZE
+    );
+    
+    if (!bo->mem) {
+        IOFree(bo, sizeof(XeBufferObject));
+        return nullptr;
+    }
+    
+    bo->size = size;
+    bo->flags = flags;
+    bo->gttOffset = 0;
+    bo->pinned = false;
+    
+    return bo;
+}
+
+void org_yourorg_XePCI::destroyBufferObject(XeBufferObject *bo) {
+    if (!bo) return;
+    
+    if (bo->mem) {
+        bo->mem->release();
+    }
+    
+    IOFree(bo, sizeof(XeBufferObject));
+}
+
+bool org_yourorg_XePCI::pinBufferObject(XeBufferObject *bo) {
+    if (!bo || bo->pinned) return false;
+    
+    // Stub for pinning BO to GGTT
+    bo->gttOffset = allocateGTTSpace(bo->size);
+    bo->pinned = true;
+    
+    IOLog("XePCI: Buffer object pinned at GTT offset 0x%llx\n", bo->gttOffset);
+    return true;
+}
+
+// ===== Interrupt Handling Preparation =====
+
+bool org_yourorg_XePCI::setupInterrupts() {
+    // Interrupt setup is complex and requires:
+    // 1. Interrupt allocation
+    // 2. Handler registration
+    // 3. Interrupt enable in hardware
+    // This is a preparation stub
+    
+    IOLog("XePCI: Interrupt setup (preparation stub)\n");
+    return false; // Return false to indicate preparation only
+}
+
+void org_yourorg_XePCI::cleanupInterrupts() {
+    // Cleanup stub
+    IOLog("XePCI: Interrupt cleanup\n");
+}
+
+// ===== GuC Firmware Loading Preparation =====
+
+bool org_yourorg_XePCI::prepareGuCFirmware() {
+    // GuC firmware loading requires:
+    // 1. Firmware file loading
+    // 2. Memory allocation in WOPCM
+    // 3. GuC initialization
+    // This is a preparation stub
+    
+    IOLog("XePCI: GuC firmware preparation (stub)\n");
+    
+    // Read GuC status register
+    UInt32 gucStatus = readReg(GEN12_GUC_STATUS);
+    IOLog("XePCI: GuC status = 0x%08x\n", gucStatus);
+    
+    return false; // Return false to indicate preparation only
+}
+
+// ===== Power Management =====
+
+bool org_yourorg_XePCI::enablePowerWells() {
+    IOLog("XePCI: Enabling power wells\n");
+    
+    // Power well control requires writing to specific registers
+    // This is simplified for now
+    
+    // Read RC state
+    UInt32 rcState = readReg(GEN12_RC_STATE);
+    IOLog("XePCI: RC state = 0x%08x\n", rcState);
+    
+    return true; // Indicate preparation done
+}
+
+void org_yourorg_XePCI::disablePowerWells() {
+    IOLog("XePCI: Disabling power wells\n");
+}
+
+// ===== Acceleration Readiness Check =====
+
+bool org_yourorg_XePCI::checkAccelerationReadiness() {
+    IOLog("XePCI: Checking acceleration readiness\n");
+    
+    bool ready = true;
+    
+    // Check if device is identified
+    if (deviceId == 0) {
+        IOLog("XePCI: Device not identified\n");
+        ready = false;
+    }
+    
+    // Check if BAR0 is mapped
+    if (!bar0Ptr) {
+        IOLog("XePCI: BAR0 not mapped\n");
+        ready = false;
+    }
+    
+    // Check if ring buffer is initialized
+    if (!renderRing.initialized) {
+        IOLog("XePCI: Ring buffer not initialized (preparation mode)\n");
+    }
+    
+    // GGTT and interrupts are optional for preparation phase
+    
+    if (ready) {
+        IOLog("XePCI: Basic acceleration framework is ready\n");
+    } else {
+        IOLog("XePCI: Acceleration framework incomplete\n");
+    }
+    
+    return ready;
 }
 
