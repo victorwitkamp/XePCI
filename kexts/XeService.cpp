@@ -1,4 +1,9 @@
 #include "XeService.hpp"
+#include "xe_hw_offsets.hpp"
+#include "XeGGTT.hpp"
+#include "XeCommandStream.hpp"
+
+#include <IOKit/IOBufferMemoryDescriptor.h> // for IOBufferMemoryDescriptor
 
 // Factory from XeUserClient.cpp
 extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
@@ -49,6 +54,13 @@ bool XeService::start(IOService* provider) {
 
   IOLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
         v, d, r, (void*)mmio, r0, r1, r2);
+
+  // --- New: lightweight HW probes (safe reads) ---
+  XeGGTT::probe(mmio);
+  {
+    XeCommandStream cs(mmio);
+    cs.logRcs0State(); // logs head/tail/ctl/gfx; no writes
+  }
 
   // Minimal BO registry
   m_boList = OSArray::withCapacity(8);
@@ -125,23 +137,42 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
 }
 
 IOReturn XeService::ucSubmitNoop() {
-  // Stub for now — will do MI_NOOP once forcewake, GGTT & rings are ready.
-  return kIOReturnSuccess;
+  if (!mmio) return kIOReturnNotReady;
+
+  // Allocate a tiny 4K batch (kernel-user shared so we can write commands)
+  auto *md = IOBufferMemoryDescriptor::withOptions(
+      kIOMemoryKernelUserShared | kIODirectionInOut, 4096, page_size);
+  if (!md) return kIOReturnNoResources;
+
+  XeCommandStream cs(mmio);
+  IOReturn kr = cs.submitNoop(md); // currently read-only path (no tail bump yet)
+  md->release();
+  return kr;
 }
 
 IOReturn XeService::ucWait(uint32_t /*timeoutMs*/) {
-  // Stub: pretend completion
+  // Stub: pretend completion (will become HWSP poll later)
   return kIOReturnSuccess;
 }
 
 IOReturn XeService::ucReadRegs(uint32_t count, uint32_t* out, uint32_t* outCount) {
-  if (!mmio) return kIOReturnNotReady;
+  if (!mmio || !out || !outCount) return kIOReturnNotReady;
 
-  // Fixed allow-list of safe, read-only dwords (no GT writes required)
+  // Fixed allow-list of safe, read-only dwords (global + RCS0 ring + GGTT ctl)
   static const uint32_t kSafeOffs[] = {
+    // global sampler
     0x0000, 0x0004, 0x0010, 0x0014,
     0x0100, 0x0104,
-    0x1000, 0x1004
+    0x1000, 0x1004,
+
+    // ring regs (relative constants expanded to absolute in xe_hw_offsets.hpp)
+    XeHW::RCS0_RING_HEAD,
+    XeHW::RCS0_RING_TAIL,
+    XeHW::RCS0_RING_CTL,
+
+    // misc
+    XeHW::GFX_MODE,
+    XeHW::PGTBL_CTL,
   };
 
   uint32_t avail = static_cast<uint32_t>(sizeof(kSafeOffs) / sizeof(kSafeOffs[0]));

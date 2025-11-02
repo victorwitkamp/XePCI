@@ -13,14 +13,21 @@ MACOS_DIR     = $(CONTENTS_DIR)/MacOS
 RES_DIR       = $(CONTENTS_DIR)/Resources
 PLIST         = kexts/Info.plist
 
-# ---- Sources (remove XeUserClient.* if you don't have them yet) ----
+# ---- Sources ----
 SOURCES = \
-  kexts/XeService.cpp \
-  kexts/XeUserClient.cpp
+    kexts/XeService.cpp \
+    kexts/XeUserClient.cpp \
+    kexts/ForcewakeGuard.cpp \
+    kexts/XeGGTT.cpp \
+    kexts/XeCommandStream.cpp
 
 HEADERS = \
-  kexts/XeService.hpp \
-  kexts/XeUserClient.hpp
+    kexts/XeService.hpp \
+    kexts/XeUserClient.hpp \
+    kexts/ForcewakeGuard.hpp \
+    kexts/XeGGTT.hpp \
+    kexts/XeCommandStream.hpp \
+    kexts/xe_hw_offsets.hpp
 
 # ---- SDK / toolchain ----
 KERNEL_SDK ?= /Library/Developer/SDKs/MacKernelSDK
@@ -36,12 +43,16 @@ CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-iframework $(KERNEL_SDK)/System/Library/Frameworks \
 	-I$(KERNEL_SDK)/Headers \
 	-Ikexts \
-	-arch $(ARCH)
+	-arch $(ARCH) \
+	-target x86_64-apple-macos10.15 \
+	-fvisibility=hidden \
+	-Wno-unused-parameter -Wno-missing-field-initializers
 
 LDFLAGS = -Xlinker -kext \
 	-nostdlib -lkmod -lkmodc++ -lcc_kext \
 	-Xlinker -export_dynamic -Xlinker -no_deduplicate \
-	-arch $(ARCH)
+	-arch $(ARCH) \
+	-target x86_64-apple-macos10.15
 
 OBJS = $(SOURCES:%.cpp=$(BUILD_DIR)/%.o)
 
@@ -52,7 +63,7 @@ all: release
 
 help:
 	@echo "XePCI stand-alone PCI kext"
-	@echo "Targets: release (default), debug, install, uninstall, load, unload, status, clean"
+	@echo "Targets: release (default), debug, install, uninstall, load, unload, status, clean, test-load"
 
 release: CXXFLAGS += -O2
 release: $(KEXT_DIR)
@@ -82,10 +93,10 @@ $(BUILD_DIR) $(CONTENTS_DIR) $(MACOS_DIR) $(RES_DIR):
 clean:
 	rm -rf $(BUILD_DIR)
 
-# ---- Install / Uninstall (Big Sur+ flow) ----
+# ---- Install / Uninstall ----
 install: $(KEXT_DIR)
 	@if [ "$$(id -u)" != "0" ]; then echo "Run with sudo"; exit 1; fi
-	- sudo kmutil unload -b $(BUNDLE_ID) >/dev/null 2>&1 || true
+	- kmutil unload -b $(BUNDLE_ID) >/dev/null 2>&1 || true
 	rm -rf /Library/Extensions/$(KEXT_NAME)
 	cp -R $(KEXT_DIR) /Library/Extensions/
 	chown -R root:wheel /Library/Extensions/$(KEXT_NAME)
@@ -96,15 +107,15 @@ install: $(KEXT_DIR)
 
 uninstall:
 	@if [ "$$(id -u)" != "0" ]; then echo "Run with sudo"; exit 1; fi
-	- sudo kmutil unload -b $(BUNDLE_ID) >/dev/null 2>&1 || true
+	- kmutil unload -b $(BUNDLE_ID) >/dev/null 2>&1 || true
 	rm -rf /Library/Extensions/$(KEXT_NAME)
 	kmutil install --volume-root / --update-all || kextcache -i / || touch /Library/Extensions/
 	@echo "Removed $(KEXT_NAME)"
 
-# ---- Quick load/unload for dev without copying ----
+# ---- Quick loads ----
 test-load: $(KEXT_DIR)
 	@if [ "$$(id -u)" != "0" ]; then echo "Run with sudo"; exit 1; fi
-	kmutil load -p $(KEXT_DIR)
+	kextutil -v 6 $(KEXT_DIR) || true
 
 load:
 	@if [ "$$(id -u)" != "0" ]; then echo "Run with sudo"; exit 1; fi
