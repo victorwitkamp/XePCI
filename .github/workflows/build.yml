@@ -30,7 +30,6 @@ jobs:
           git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
           sudo mkdir -p /Library/Developer/SDKs
           sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
-          echo "SDKs:"; ls -la /Library/Developer/SDKs/
 
       - name: Verify toolchain
         run: |
@@ -46,26 +45,24 @@ jobs:
           make release KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
 
-      - name: Package artifact
-        run: |
-          cd build
-          zip -r XePCI-release-${{ github.sha }}.zip XePCI.kext
-          cd ..
-
-      - name: Upload artifact
+      # ⛔️ No manual zipping — upload the bundle directly
+      - name: Upload artifact (Release kext)
         uses: actions/upload-artifact@v4
         with:
-          name: XePCI-release-${{ github.sha }}
-          path: build/XePCI-release-*.zip
+          name: XePCI-kext-${{ github.sha }}-release
+          path: build/XePCI.kext
+          if-no-files-found: error
           retention-days: 30
 
       - name: Summary
         if: success()
         run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Target: Release" >> $GITHUB_STEP_SUMMARY
-          echo "- SDK: MacKernelSDK" >> $GITHUB_STEP_SUMMARY
-          echo "- Arch: x86_64 (cross-compiled)" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Build Summary";
+            echo "- Target: Release";
+            echo "- SDK: MacKernelSDK";
+            echo "- Arch: x86_64 (cross-compiled)";
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build-debug:
     name: Debug build
@@ -92,18 +89,24 @@ jobs:
           make clean
           make debug KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
-          # Optional: produce dSYM (not strictly needed for kext, but handy)
+          # Optional: produce dSYM
           dsymutil build/XePCI.kext/Contents/MacOS/XePCI || true
 
-      - name: Package artifact
-        run: |
-          cd build
-          zip -r XePCI-debug-${{ github.sha }}.zip XePCI.kext
-          cd ..
-
-      - name: Upload artifact
+      # ⛔️ No manual zipping — upload the bundle directly
+      - name: Upload artifact (Debug kext)
         uses: actions/upload-artifact@v4
         with:
-          name: XePCI-debug-${{ github.sha }}
-          path: build/XePCI-debug-*.zip
+          name: XePCI-kext-${{ github.sha }}-debug
+          path: build/XePCI.kext
+          if-no-files-found: error
+          retention-days: 30
+
+      # Optional: upload dSYM separately if created
+      - name: Upload dSYM (Debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: XePCI-dSYM-${{ github.sha }}-debug
+          path: build/XePCI.kext.dSYM
+          if-no-files-found: ignore
           retention-days: 30
