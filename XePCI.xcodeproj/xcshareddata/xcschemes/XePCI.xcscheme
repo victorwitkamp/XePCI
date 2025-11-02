@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "XePCI"
+               BlueprintIdentifier = "FA0EA56CE0544E3EAC9A77A2"
                BuildableName = "XePCI.kext"
                BlueprintName = "XePCI"
                ReferencedContainer = "container:XePCI.xcodeproj">

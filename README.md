@@ -180,9 +180,22 @@ struct XeDevice {
 
 ### Quick Start
 
+**Using Xcode:**
 ```bash
-# Build the Lilu plugin
+# Open the Xcode project
+open XePCI.xcodeproj
+
+# Build from Xcode (Cmd+B)
+# The kext will be in DerivedData/XePCI/Build/Products/Release/XePCI.kext
+```
+
+**Using Command Line:**
+```bash
+# Build with Makefile
 make release
+
+# Or build with xcodebuild
+xcodebuild -project XePCI.xcodeproj -scheme XePCI -configuration Release
 
 # Install (requires sudo and SIP disabled)
 sudo make install
@@ -195,11 +208,13 @@ sudo ./xectl info
 
 ### Documentation
 
-- **[BUILD.md](BUILD.md)** — Complete build instructions for the Lilu plugin, including prerequisites, build options, and CI/CD setup.
+- **[BUILD.md](BUILD.md)** — Complete build instructions including Xcode project and Makefile builds, prerequisites, build options, and CI/CD setup.
 - **[TESTING.md](TESTING.md)** — Comprehensive testing guide for local Mac, including system preparation, installation, debugging, and safety procedures.
 
 ### Build Notes
-- Requires Lilu SDK headers for compilation
+- **Xcode Project**: Native Xcode project (`XePCI.xcodeproj`) for IDE-based development with full debugging support
+- **Makefile**: Traditional command-line build system for CI/CD and automated builds
+- Requires MacKernelSDK headers for compilation
 - SIP must be disabled for development and testing
 - Link against `IOKit` and `libkern`
 - Start with **read-only MMIO**; verify register layout using Linux `i915` / `xe` sources
