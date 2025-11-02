@@ -49,3 +49,4 @@ userspace/xectl
 *.swo
 *~
 .*.swp
+/MacKernelSDK
