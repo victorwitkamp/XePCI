@@ -20,6 +20,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Lint source Info.plist
+        run: |
+          plutil -lint kexts/Info.plist
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -44,6 +48,8 @@ jobs:
           make clean
           make release KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
+          # Lint built Info.plist as parsed by macOS
+          plutil -lint build/XePCI.kext/Contents/Info.plist
 
       # --- Stage so the artifact contains XePCI.kext at the top level ---
       - name: Stage artifact (Release)
@@ -79,6 +85,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Lint source Info.plist
+        run: |
+          plutil -lint kexts/Info.plist
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -98,6 +108,8 @@ jobs:
           make debug KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
           dsymutil build/XePCI.kext/Contents/MacOS/XePCI || true
+          # Lint built Info.plist as parsed by macOS
+          plutil -lint build/XePCI.kext/Contents/Info.plist
 
       - name: Stage artifact (Debug)
         run: |
