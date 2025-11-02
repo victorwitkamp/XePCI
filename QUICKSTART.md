@@ -1,21 +1,32 @@
 # XePCI Quick Reference
 
-Quick commands for building and testing the XePCI Lilu plugin.
+Quick commands for building and testing the XePCI kernel extension.
 
 ## Prerequisites Setup
 
 ```bash
-# Install Xcode Command Line Tools
+# Install Xcode (recommended) or Xcode Command Line Tools
 xcode-select --install
 
-# Install Lilu SDK headers
-git clone https://github.com/acidanthera/Lilu.git /tmp/Lilu
-sudo mkdir -p /usr/local/include/Lilu
-sudo cp -R /tmp/Lilu/Lilu/Headers /usr/local/include/Lilu/
+# Install MacKernelSDK
+git clone https://github.com/acidanthera/MacKernelSDK.git /tmp/MacKernelSDK
+sudo mkdir -p /Library/Developer/SDKs
+sudo cp -R /tmp/MacKernelSDK /Library/Developer/SDKs/
 ```
 
 ## Building
 
+**Using Xcode:**
+```bash
+# Open project
+open XePCI.xcodeproj
+
+# Build from Xcode (Cmd+B)
+# Or from command line:
+xcodebuild -project XePCI.xcodeproj -scheme XePCI -configuration Release
+```
+
+**Using Makefile:**
 ```bash
 # Release build (optimized)
 make release
@@ -107,11 +118,12 @@ ls -lt /Library/Logs/DiagnosticReports/*.panic | head -5
 
 ## Documentation
 
-- **[BUILD.md](BUILD.md)** - Complete build instructions
+- **[BUILD.md](BUILD.md)** - Complete build instructions (Xcode and Makefile)
 - **[TESTING.md](TESTING.md)** - Testing and debugging guide
 - **[README.md](README.md)** - Project overview
 - **[POC.md](POC.md)** - Proof of concept documentation
 - **[RESEARCH.md](RESEARCH.md)** - Implementation research
+- **[docs/XCODE_PROJECT.md](docs/XCODE_PROJECT.md)** - Xcode project structure
 
 ## Help
 
