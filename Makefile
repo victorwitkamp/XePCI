@@ -5,9 +5,14 @@ KEXT_NAME    = XePCI.kext
 BUNDLE_ID    = nl.victorwitkamp.XePCI
 VERSION      = 1.0.0
 
+# Build configuration (mirrors Xcode-style folders)
+# CONFIG can be Debug or Release
+CONFIG      ?= Debug
+
 # ---- Layout ----
 BUILD_DIR     = build
-KEXT_DIR      = $(BUILD_DIR)/$(KEXT_NAME)
+BUILD_ROOT    = $(BUILD_DIR)/$(CONFIG)
+KEXT_DIR      = $(BUILD_ROOT)/$(KEXT_NAME)
 CONTENTS_DIR  = $(KEXT_DIR)/Contents
 MACOS_DIR     = $(CONTENTS_DIR)/MacOS
 RES_DIR       = $(CONTENTS_DIR)/Resources
@@ -30,9 +35,15 @@ HEADERS = \
     kexts/xe_hw_offsets.hpp
 
 # ---- SDK / toolchain ----
-KERNEL_SDK ?= /Library/Developer/SDKs/MacKernelSDK
+# Use the in-repo MacKernelSDK by default
+KERNEL_SDK ?= $(CURDIR)/MacKernelSDK
 CXX        = clang++
 ARCH      ?= x86_64
+
+# Sanity check: ensure SDK has expected layout
+ifeq (,$(wildcard $(KERNEL_SDK)/Headers))
+$(error MacKernelSDK not found at '$(KERNEL_SDK)'. Set KERNEL_SDK=/absolute/path/to/MacKernelSDK)
+endif
 
 CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-fno-rtti -fno-exceptions -fno-builtin -fno-common \
@@ -49,12 +60,12 @@ CXXFLAGS = -std=c++17 -Wall -Wextra \
 	-Wno-unused-parameter -Wno-missing-field-initializers
 
 LDFLAGS = -Xlinker -kext \
-	-nostdlib -lkmod -lkmodc++ -lcc_kext \
+	-nostdlib -L$(KERNEL_SDK)/Library/x86_64 -lkmod -lkmodc++ -lcc_kext \
 	-Xlinker -export_dynamic -Xlinker -no_deduplicate \
 	-arch $(ARCH) \
 	-target x86_64-apple-macos10.15
 
-OBJS = $(SOURCES:%.cpp=$(BUILD_DIR)/%.o)
+OBJS = $(SOURCES:%.cpp=$(BUILD_ROOT)/%.o)
 
 # ---- Targets ----
 .PHONY: all clean install uninstall load unload status test-load release debug help
@@ -65,9 +76,11 @@ help:
 	@echo "XePCI stand-alone PCI kext"
 	@echo "Targets: release (default), debug, install, uninstall, load, unload, status, clean, test-load"
 
+release: CONFIG = Release
 release: CXXFLAGS += -O2
 release: $(KEXT_DIR)
 
+debug: CONFIG = Debug
 debug: CXXFLAGS += -g -O0 -DDEBUG
 debug: $(KEXT_DIR)
 
@@ -82,12 +95,12 @@ $(KEXT_DIR): $(BUILD_DIR) $(CONTENTS_DIR) $(MACOS_DIR) $(RES_DIR) $(OBJS)
 	@echo "Build complete: $(KEXT_DIR)"
 
 # Objects
-$(BUILD_DIR)/%.o: %.cpp $(HEADERS)
+$(BUILD_ROOT)/%.o: %.cpp $(HEADERS)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Dirs
-$(BUILD_DIR) $(CONTENTS_DIR) $(MACOS_DIR) $(RES_DIR):
+$(BUILD_DIR) $(BUILD_ROOT) $(CONTENTS_DIR) $(MACOS_DIR) $(RES_DIR):
 	mkdir -p $@
 
 clean:

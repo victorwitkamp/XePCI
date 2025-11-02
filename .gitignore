@@ -11,12 +11,30 @@ build/
 *.dSYM
 
 # Xcode
-*.xcworkspace/
-xcuserdata/
+# Build intermediates
 DerivedData/
+
+# User-specific data (do not commit)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Keep workspaces but ignore user data inside
+*.xcworkspace/xcuserdata/
+!*.xcworkspace/contents.xcworkspacedata
+!*.xcworkspace/xcshareddata/
+
+# Project files: keep pbxproj and shared data; ignore user data
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcshareddata/**
+
+# Nested workspace inside .xcodeproj
+*.xcodeproj/project.xcworkspace/xcuserdata/
+!*.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+!*.xcodeproj/project.xcworkspace/xcshareddata/
 
 # Compiled binaries
 xectl
