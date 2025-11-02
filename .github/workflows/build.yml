@@ -45,12 +45,19 @@ jobs:
           make release KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
 
-      # ⛔️ No manual zipping — upload the bundle directly
-      - name: Upload artifact (Release kext)
+      # --- Stage so the artifact contains XePCI.kext at the top level ---
+      - name: Stage artifact (Release)
+        run: |
+          rm -rf dist/release
+          mkdir -p dist/release
+          cp -R build/XePCI.kext dist/release/XePCI.kext
+          ls -la dist/release
+
+      - name: Upload artifact (Release)
         uses: actions/upload-artifact@v4
         with:
-          name: XePCI-kext-${{ github.sha }}-release
-          path: build/XePCI.kext
+          name: XePCI-${{ github.sha }}-release
+          path: dist/release
           if-no-files-found: error
           retention-days: 30
 
@@ -61,7 +68,8 @@ jobs:
             echo "## Build Summary";
             echo "- Target: Release";
             echo "- SDK: MacKernelSDK";
-            echo "- Arch: x86_64 (cross-compiled)";
+            echo "- Arch: x86_64";
+            echo "- Artifact root contains: XePCI.kext";
           } >> "$GITHUB_STEP_SUMMARY"
 
   build-debug:
@@ -89,24 +97,21 @@ jobs:
           make clean
           make debug KERNEL_SDK=$KERNEL_SDK ARCH=x86_64
           test -f build/XePCI.kext/Contents/MacOS/XePCI
-          # Optional: produce dSYM
           dsymutil build/XePCI.kext/Contents/MacOS/XePCI || true
 
-      # ⛔️ No manual zipping — upload the bundle directly
-      - name: Upload artifact (Debug kext)
-        uses: actions/upload-artifact@v4
-        with:
-          name: XePCI-kext-${{ github.sha }}-debug
-          path: build/XePCI.kext
-          if-no-files-found: error
-          retention-days: 30
+      - name: Stage artifact (Debug)
+        run: |
+          rm -rf dist/debug
+          mkdir -p dist/debug
+          cp -R build/XePCI.kext dist/debug/XePCI.kext
+          # Optional: include dSYM in the same artifact
+          if [ -d build/XePCI.kext.dSYM ]; then cp -R build/XePCI.kext.dSYM dist/debug/XePCI.kext.dSYM; fi
+          ls -la dist/debug
 
-      # Optional: upload dSYM separately if created
-      - name: Upload dSYM (Debug)
-        if: always()
+      - name: Upload artifact (Debug)
         uses: actions/upload-artifact@v4
         with:
-          name: XePCI-dSYM-${{ github.sha }}-debug
-          path: build/XePCI.kext.dSYM
-          if-no-files-found: ignore
+          name: XePCI-${{ github.sha }}-debug
+          path: dist/debug
+          if-no-files-found: error
           retention-days: 30
