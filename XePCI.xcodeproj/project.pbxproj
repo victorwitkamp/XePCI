@@ -1,0 +1,413 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		78A2084963354117B38D6DA7 /* XeService.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2845AE1451574C2AAE6D4460 /* XeService.cpp */; };
+		D8E381C4F26C4EFF8EB50CF3 /* XeUserClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18D666EED1E544A28E00A24C /* XeUserClient.cpp */; };
+		C999BB7FBF18411499A10DC6 /* ForcewakeGuard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 38270B3E29A945AAB20DDF3E /* ForcewakeGuard.cpp */; };
+		C6DD830D6A0244008D63D75C /* XeGGTT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1500EC33208845E3A80FAEDC /* XeGGTT.cpp */; };
+		79C8421F27514D3793CE14D6 /* XeCommandStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D55C46D4F6B408CBF194DF8 /* XeCommandStream.cpp */; };
+		771478329CD946CDB56B3A16 /* XeService.hpp in Headers */ = {isa = PBXBuildFile; fileRef = DD3DECD112AB41F9B313F86D /* XeService.hpp */; };
+		0FC655F0384C42919199B05F /* XeUserClient.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 15832EEEE7E94E65B16741A2 /* XeUserClient.hpp */; };
+		7C5D322F59394AAE824874C2 /* ForcewakeGuard.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 82B6DA9B26164C9FA3A0EBDA /* ForcewakeGuard.hpp */; };
+		E5B8FD42A80B4A54B62D7DE4 /* XeGGTT.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 388898F9F0A64CB18375F4CF /* XeGGTT.hpp */; };
+		CAD9794FC4534DE1A2BFF4AB /* XeCommandStream.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5CC91A15A51049BFB2890BFB /* XeCommandStream.hpp */; };
+		098030A0723A4AF2858FCB14 /* xe_hw_offsets.hpp in Headers */ = {isa = PBXBuildFile; fileRef = DD6147292EC8406E965F7DB3 /* xe_hw_offsets.hpp */; };
+		643B047E13D74FC5B59A8E20 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 626072FC68114CD182067F46 /* Info.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2845AE1451574C2AAE6D4460 /* XeService.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XeService.cpp; sourceTree = "<group>"; };
+		18D666EED1E544A28E00A24C /* XeUserClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XeUserClient.cpp; sourceTree = "<group>"; };
+		38270B3E29A945AAB20DDF3E /* ForcewakeGuard.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ForcewakeGuard.cpp; sourceTree = "<group>"; };
+		1500EC33208845E3A80FAEDC /* XeGGTT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XeGGTT.cpp; sourceTree = "<group>"; };
+		2D55C46D4F6B408CBF194DF8 /* XeCommandStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XeCommandStream.cpp; sourceTree = "<group>"; };
+		DD3DECD112AB41F9B313F86D /* XeService.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeService.hpp; sourceTree = "<group>"; };
+		15832EEEE7E94E65B16741A2 /* XeUserClient.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeUserClient.hpp; sourceTree = "<group>"; };
+		82B6DA9B26164C9FA3A0EBDA /* ForcewakeGuard.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ForcewakeGuard.hpp; sourceTree = "<group>"; };
+		388898F9F0A64CB18375F4CF /* XeGGTT.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeGGTT.hpp; sourceTree = "<group>"; };
+		5CC91A15A51049BFB2890BFB /* XeCommandStream.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeCommandStream.hpp; sourceTree = "<group>"; };
+		DD6147292EC8406E965F7DB3 /* xe_hw_offsets.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xe_hw_offsets.hpp; sourceTree = "<group>"; };
+		626072FC68114CD182067F46 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		80FCCF2AAEDD454DAFEC99BB /* XePCI.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XePCI.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A0D1D3807D684BD8AAC7F12D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		905569EF53034F50A648D8CD = {
+			isa = PBXGroup;
+			children = (
+				6969A4CDA70D42E7A5F1AE77,
+				4E462071354A4105849F8DC4,
+				875E52E94D1647A2BD3D694A,
+				AF4A84A479C4471B95459630,
+			);
+			sourceTree = "<group>";
+		};
+		6969A4CDA70D42E7A5F1AE77 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				DD3DECD112AB41F9B313F86D,
+				15832EEEE7E94E65B16741A2,
+				82B6DA9B26164C9FA3A0EBDA,
+				388898F9F0A64CB18375F4CF,
+				5CC91A15A51049BFB2890BFB,
+				DD6147292EC8406E965F7DB3,
+			);
+			name = Headers;
+			path = kexts;
+			sourceTree = "<group>";
+		};
+		4E462071354A4105849F8DC4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				626072FC68114CD182067F46,
+			);
+			name = Resources;
+			path = kexts;
+			sourceTree = "<group>";
+		};
+		875E52E94D1647A2BD3D694A /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				2845AE1451574C2AAE6D4460,
+				18D666EED1E544A28E00A24C,
+				38270B3E29A945AAB20DDF3E,
+				1500EC33208845E3A80FAEDC,
+				2D55C46D4F6B408CBF194DF8,
+			);
+			name = Sources;
+			path = kexts;
+			sourceTree = "<group>";
+		};
+		AF4A84A479C4471B95459630 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				80FCCF2AAEDD454DAFEC99BB /* XePCI.kext */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D5F75B78D199452A9516FB2F /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				771478329CD946CDB56B3A16 /* XeService.hpp in Headers */,
+				0FC655F0384C42919199B05F /* XeUserClient.hpp in Headers */,
+				7C5D322F59394AAE824874C2 /* ForcewakeGuard.hpp in Headers */,
+				E5B8FD42A80B4A54B62D7DE4 /* XeGGTT.hpp in Headers */,
+				CAD9794FC4534DE1A2BFF4AB /* XeCommandStream.hpp in Headers */,
+				098030A0723A4AF2858FCB14 /* xe_hw_offsets.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		FA0EA56CE0544E3EAC9A77A2 /* XePCI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C3D852F0BA3940B3B4BFDFB6 /* Build configuration list for PBXNativeTarget "XePCI" */;
+			buildPhases = (
+				D5F75B78D199452A9516FB2F /* Headers */,
+				47EDA0A803ED4CF99D2E2534 /* Resources */,
+				590DD864BECA46AFA113BDA0 /* Sources */,
+				A0D1D3807D684BD8AAC7F12D /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = XePCI;
+			productName = XePCI;
+			productReference = 80FCCF2AAEDD454DAFEC99BB /* XePCI.kext */;
+			productType = "com.apple.product-type.kernel-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C6AB3C2DA01F4797B329ECFA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1200;
+				ORGANIZATIONNAME = "Victor Witkamp";
+				TargetAttributes = {
+					FA0EA56CE0544E3EAC9A77A2 = {
+						CreatedOnToolsVersion = 12.0;
+					};
+				};
+			};
+			buildConfigurationList = 512EC022BBAA410B87BAF838 /* Build configuration list for PBXProject "XePCI" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 905569EF53034F50A648D8CD;
+			productRefGroup = AF4A84A479C4471B95459630 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FA0EA56CE0544E3EAC9A77A2 /* XePCI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		47EDA0A803ED4CF99D2E2534 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				643B047E13D74FC5B59A8E20 /* Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		590DD864BECA46AFA113BDA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				78A2084963354117B38D6DA7 /* XeService.cpp in Sources */,
+				D8E381C4F26C4EFF8EB50CF3 /* XeUserClient.cpp in Sources */,
+				C999BB7FBF18411499A10DC6 /* ForcewakeGuard.cpp in Sources */,
+				C6DD830D6A0244008D63D75C /* XeGGTT.cpp in Sources */,
+				79C8421F27514D3793CE14D6 /* XeCommandStream.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D939DE14471E49AE8C9B8FB7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/kexts",
+				);
+				KERNEL_FRAMEWORK_HEADERS = "/Library/Developer/SDKs/MacKernelSDK/Headers";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULE_NAME = com.apple.kpi.bsd;
+				MODULE_VERSION = 1.0.0d1;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = "/Library/Developer/SDKs/MacKernelSDK";
+			};
+			name = Debug;
+		};
+		82AF4061D2214AA18BE7D4D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/kexts",
+				);
+				KERNEL_FRAMEWORK_HEADERS = "/Library/Developer/SDKs/MacKernelSDK/Headers";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULE_NAME = com.apple.kpi.bsd;
+				MODULE_VERSION = 1.0.0;
+				SDKROOT = "/Library/Developer/SDKs/MacKernelSDK";
+			};
+			name = Release;
+		};
+		B67E3D325A894739AFB4BA11 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				INFOPLIST_FILE = kexts/Info.plist;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/kexts",
+					"/Library/Developer/SDKs/MacKernelSDK/Headers",
+				);
+				KERNEL_FRAMEWORK_HEADERS = "/Library/Developer/SDKs/MacKernelSDK/Headers";
+				MARKETING_VERSION = 1.0.0;
+				MODULE_NAME = nl.victorwitkamp.XePCI;
+				MODULE_START = kern_start;
+				MODULE_STOP = kern_stop;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.victorwitkamp.XePCI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = kext;
+				OTHER_CFLAGS = (
+					"-fno-rtti",
+					"-fno-exceptions",
+					"-fno-builtin",
+					"-fno-common",
+					"-mkernel",
+					"-nostdlib",
+				);
+				OTHER_LDFLAGS = (
+					"-lkmod",
+					"-lkmodc++",
+					"-lcc_kext",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"__KERNEL__",
+					"KERNEL",
+					"KERNEL_PRIVATE",
+					"DRIVER_PRIVATE",
+					"PRODUCT_NAME=XePCI",
+					"MODULE_VERSION=\"1.0.0\"",
+					"DEBUG=1",
+				);
+			};
+			name = Debug;
+		};
+		7E82B6C285FF4B01AEBFC44B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1.0.0;
+				INFOPLIST_FILE = kexts/Info.plist;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/kexts",
+					"/Library/Developer/SDKs/MacKernelSDK/Headers",
+				);
+				KERNEL_FRAMEWORK_HEADERS = "/Library/Developer/SDKs/MacKernelSDK/Headers";
+				MARKETING_VERSION = 1.0.0;
+				MODULE_NAME = nl.victorwitkamp.XePCI;
+				MODULE_START = kern_start;
+				MODULE_STOP = kern_stop;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.victorwitkamp.XePCI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = kext;
+				OTHER_CFLAGS = (
+					"-fno-rtti",
+					"-fno-exceptions",
+					"-fno-builtin",
+					"-fno-common",
+					"-mkernel",
+					"-nostdlib",
+				);
+				OTHER_LDFLAGS = (
+					"-lkmod",
+					"-lkmodc++",
+					"-lcc_kext",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"__KERNEL__",
+					"KERNEL",
+					"KERNEL_PRIVATE",
+					"DRIVER_PRIVATE",
+					"PRODUCT_NAME=XePCI",
+					"MODULE_VERSION=\"1.0.0\"",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		512EC022BBAA410B87BAF838 /* Build configuration list for PBXProject "XePCI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D939DE14471E49AE8C9B8FB7 /* Debug */,
+				82AF4061D2214AA18BE7D4D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C3D852F0BA3940B3B4BFDFB6 /* Build configuration list for PBXNativeTarget "XePCI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B67E3D325A894739AFB4BA11 /* Debug */,
+				7E82B6C285FF4B01AEBFC44B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = C6AB3C2DA01F4797B329ECFA /* Project object */;
+}

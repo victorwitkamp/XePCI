@@ -11,9 +11,12 @@ build/
 *.dSYM
 
 # Xcode
-*.xcodeproj/
 *.xcworkspace/
 xcuserdata/
+DerivedData/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
 
 # Compiled binaries
 xectl
