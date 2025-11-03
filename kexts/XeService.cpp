@@ -3,6 +3,9 @@
 #include "XeGGTT.hpp"
 #include "XeCommandStream.hpp"
 
+#include <IOKit/IOLib.h>            // IOLog, kprintf
+#include <kern/debug.h>              // panic
+
 #include <IOKit/IOBufferMemoryDescriptor.h> // for IOBufferMemoryDescriptor
 
 // Factory from XeUserClient.cpp
@@ -10,6 +13,12 @@ extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
                                             task_t task, void* secID, UInt32 type);
 
 #define super IOService
+
+// Mirror logs to both system log and on-screen (where possible)
+#define XE_LOG(fmt, ...) do { \
+  IOLog(fmt, ##__VA_ARGS__); \
+  kprintf(fmt, ##__VA_ARGS__); \
+} while (0)
 OSDefineMetaClassAndStructors(XeService, IOService)
 
 bool XeService::init(OSDictionary* props) {
@@ -52,8 +61,8 @@ bool XeService::start(IOService* provider) {
   uint32_t r1 = readReg(0x0100);
   uint32_t r2 = readReg(0x1000);
 
-  IOLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
-        v, d, r, (void*)mmio, r0, r1, r2);
+  XE_LOG("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
+    v, d, r, (void*)mmio, r0, r1, r2);
 
   // --- New: lightweight HW probes (safe reads) ---
   XeGGTT::probe(mmio);
@@ -67,7 +76,14 @@ bool XeService::start(IOService* provider) {
   if (!m_boList) return false;
 
   registerService();  // allow IOUserClient to open us
-  return true;
+
+  // Intentionally panic after completing the last startup action,
+  // so all logs above are flushed and visible on-screen during the panic.
+  XE_LOG("XeService: intentional panic for bring-up diagnostics\n");
+  panic("XePCI intentional panic: vendor=%04x device=%04x rev=0x%02x regs:[0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x",
+    v, d, r, r0, r1, r2);
+
+  return true; // unreachable
 }
 
 void XeService::stop(IOService* provider) {
@@ -130,8 +146,8 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   uint64_t cookie = m_boList->getCount(); // 1..N
   *outCookie = cookie;
 
-  IOLog("XeService: BO created cookie=%llu size=%u\n",
-        (unsigned long long)cookie, sz);
+  XE_LOG("XeService: BO created cookie=%llu size=%u\n",
+    (unsigned long long)cookie, sz);
 
   return kIOReturnSuccess;
 }
