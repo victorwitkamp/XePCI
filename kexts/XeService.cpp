@@ -145,6 +145,9 @@ IOBufferMemoryDescriptor* XeService::boFromCookie(uint64_t cookie) {
 IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   if (!m_boList) return kIOReturnNotReady;
 
+  // Check for overflow before page-aligning
+  if (bytes > (UINT32_MAX - 0xFFFu)) return kIOReturnBadArgument;
+  
   // Page-align (4 KiB)
   uint32_t sz = (bytes + 0xFFFu) & ~0xFFFu;
 
