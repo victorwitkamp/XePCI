@@ -24,7 +24,8 @@ SOURCES = \
     kexts/XeUserClient.cpp \
     kexts/ForcewakeGuard.cpp \
     kexts/XeGGTT.cpp \
-    kexts/XeCommandStream.cpp
+    kexts/XeCommandStream.cpp \
+    kexts/XeBootArgs.cpp
 
 HEADERS = \
     kexts/XeService.hpp \
