@@ -79,9 +79,9 @@ bool XeService::start(IOService* provider) {
 
   // Intentionally panic after completing the last startup action,
   // so all logs above are flushed and visible on-screen during the panic.
-  XE_LOG("XeService: intentional panic for bring-up diagnostics\n");
-  panic("XePCI intentional panic: vendor=%04x device=%04x rev=0x%02x regs:[0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x",
-    v, d, r, r0, r1, r2);
+  // XE_LOG("XeService: intentional panic for bring-up diagnostics\n");
+  // panic("XePCI intentional panic: vendor=%04x device=%04x rev=0x%02x regs:[0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x",
+  //   v, d, r, r0, r1, r2);
 
   return true; // unreachable
 }

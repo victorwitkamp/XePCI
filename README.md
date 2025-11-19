@@ -1,250 +1,194 @@
-# Xe macOS iGPU Driver — Technical Overview
+# XePCI – Technical Overview (Current State)
 
-## Quick Start
+This repository contains a standalone macOS kernel extension (`XePCI.kext`) and a small userspace tool (`xectl`) for bringing up and experimenting with Intel Xe‑LP iGPUs, with a primary focus on **Raptor Lake**.
 
-👉 **New to the project?** See [QUICKSTART.md](QUICKSTART.md) for quick commands  
-📖 **Building the kext?** See [BUILD.md](BUILD.md) for detailed instructions  
-🧪 **Testing on Mac?** See [TESTING.md](TESTING.md) for complete testing guide  
+This README intentionally avoids build/CI/test instructions and only documents the **current technical state** of the project.
 
 ---
 
-## Current Status
+## Target Hardware
 
-🎉 **Proof of Concept (PoC) + Acceleration Framework Implemented** - See [POC.md](POC.md) for details.
+- Intel Raptor Lake HX / Xe‑LP iGPU
+- Primary target device: **PCI 8086:A788**
+- Architecture: **Gen 12.2 (Xe‑LP)**
+- Assumes a Hackintosh / OpenCore environment where the iGPU is visible as a PCI device.
 
-The implementation demonstrates:
-- ✅ PCI device enumeration and BAR0 mapping
-- ✅ Device identification (Raptor Lake, Alder Lake, Tiger Lake)
-- ✅ Register access framework with safety checks
-- ✅ Forcewake management for safe register access
-- ✅ GT configuration readout (thread status, DSS enable)
-- ✅ GGTT initialization framework (preparation)
-- ✅ Ring buffer allocation and management (preparation)
-- ✅ Command submission framework with MI_NOOP (preparation)
-- ✅ Buffer object creation and tracking
-- ✅ XeService user-space interface with device info
-- ✅ Power management and interrupt preparation
-- ✅ GuC firmware loading preparation
-
-**Current Phase**: Acceleration framework prepared, ready for hardware activation
-
-**Next Steps**: Hardware initialization, firmware loading, active command submission
+Other Gen12 device IDs may be recognized in code, but only 0xA788 is considered the main supported target.
 
 ---
 
-## Goal
-Implement a minimal Intel Xe (Gen12, Tiger / Alder / Raptor Lake) iGPU driver for macOS to achieve:
-1. PCI enumeration and MMIO access ✅ (PoC complete)
-2. Firmware load (GuC/HuC) and GT power-up
-3. Ring-buffer command submission (MI_NOOP → BLT → compute)
-4. Optional framebuffer or IOAccelerator interface
+## Architecture
 
-**Target Device**: Intel Raptor Lake HX (ASUS GI814JI)
-- **Device ID**: 0xA788
-- **Revision**: B-0 (0x04)
-- **Configuration**: HX 8P+16E with 32EU (Execution Units)
-- **Architecture**: Gen 12.2 (Xe-LP)
+The project consists of:
 
----
+- `XePCI.kext` — standalone PCI driver that:
+    - Attaches to `IOPCIDevice` for the Intel iGPU.
+    - Maps BAR0 (GTTMMADR) into kernel virtual memory.
+    - Provides safe MMIO register access helpers.
+    - Implements minimal bring‑up scaffolding (forcewake, GT config, BOs, ring/GGTT stubs).
+    - Exposes an `IOUserClient` (`XeUserClient`) for userspace experiments.
 
-## Components
+- `xectl` — a thin CLI that:
+    - Opens the `XeService` IOService.
+    - Calls the small set of exported user‑client methods.
+    - Prints device / GT info and basic register reads.
 
-### 1. **XePCI.kext**
-**Purpose:** PCI attach, BAR mapping, register access.
-
-**Functions**
-- Match IGPU PCI vendor `0x8086` / device ID.
-- Enable memory, I/O, bus mastering.
-- Map BAR0 → MMIO region.
-- Implement safe register read/dump.
-- Provide interfaces for later ring management and user client.
-- Expose `registerService()` for user-space connection.
+There is **no** IOAccelerator or framebuffer integration active right now; the focus is on low‑level MMIO and scaffolding.
 
 ---
 
-### 2. **Firmware / GT Init**
-**Purpose:** Initialize GPU core.
+## `XePCI.kext`
 
-**Tasks**
-- Load GuC / HuC firmware from user-supplied blobs.
-- Power-well enable, forcewake domains.
-- Program GGTT base and scratch registers.
-- Initialize one render/compute ring (head/tail, context, doorbell).
-- Install interrupt handler for seqno / fault / reset.
+Main concepts:
 
----
+- **PCI attach**
+    - Matches vendor `0x8086` and device `0xA788` via `Info.plist` personality `XeService`.
+    - Enables memory + bus mastering on the PCI function.
+    - Maps BAR0 to a `volatile uint32_t *mmio` pointer.
 
-### 3. **Buffer Objects (BO) & GTT**
-**Purpose:** Manage GPU-visible memory.
+- **Register access**
+    - 32‑bit MMIO helpers, used throughout the driver:
 
-**Tasks**
-- Allocate pinned pages (`IOBufferMemoryDescriptor`).
-- Map into GGTT with cache attributes.
-- Maintain refcount / fence / sync lists.
-- Provide kernel API for BO create / destroy / map.
+        ```c
+        inline uint32_t readReg(uint32_t off) {
+            return mmio ? mmio[off >> 2] : 0;
+        }
 
----
+        inline void writeReg(uint32_t off, uint32_t val) {
+            if (mmio) { mmio[off >> 2] = val; OSSynchronizeIO(); }
+        }
+        ```
 
-### 4. **Command Submission**
-**Purpose:** Execute GPU work.
+- **Forcewake (GT domain)**
+    - Uses Gen12 forcewake registers to keep GT powered while reading GT registers.
+    - Wraps access with a `ForcewakeGuard` RAII helper so GT domains are acquired/released safely.
 
-**Flow**
-1. Allocate BO for batchbuffer.
-2. Write command stream (`MI_NOOP`, `MI_BATCH_BUFFER_END`).
-3. Write tail pointer, ring doorbell.
-4. Poll seqno for completion or wait on interrupt.
-5. Handle hang detection and reset.
+- **GT configuration readout**
+    - Reads thread status and DSS enable registers (e.g. `GEN12_GT_THREAD_STATUS`, `GEN12_GT_GEOMETRY_DSS_ENABLE`).
+    - Computes a basic “enabled DSS / EU count” for logging / sanity checks.
 
----
+- **Buffer objects (BOs)**
+    - Uses `IOBufferMemoryDescriptor` to allocate pinned kernel buffers.
+    - Keeps a small `OSArray` of BOs and exposes them via a numeric “cookie” to userspace (no direct pointers).
 
-### 5. **XeAccel.kext (IOAccelerator shim)**
-**Purpose:** Optional user-facing accelerator.
+- **GGTT / ring / GuC**
+    - Structures and stubs exist for:
+        - GGTT state
+        - A single render/compute ring (head, tail, base, size)
+        - GuC firmware state
+    - Today these are **scaffolding only**: they allocate memory and log, but do not program the real hardware rings or submit commands.
 
-**Responsibilities**
-- Implement `IOUserClient` with methods:
-  - `createBuffer`
-  - `submit`
-  - `wait`
-  - `readRegister`
-- Validate user input and translate to kernel ops.
-- Expose minimal `IOAccelDevice` so macOS can enumerate an accelerator service.
-
----
-
-### 6. **XeFB.kext (optional)**
-**Purpose:** Dumb framebuffer for display or visual debug.
-
-**Features**
-- Derive from `IOFramebuffer`.
-- Map linear buffer to `IOSurface`.
-- Implement `setDisplayMode`, `getPixelInformation`, and `flushRect`.
-- Optionally connect GPU BLT output.
+- **`XeService` IOService**
+    - Core driver class (`XeService` derives from `IOService`).
+    - Responsible for:
+        - PCI attach / detach.
+        - BAR0 map / unmap.
+        - Forcewake tests and GT config logging in `start()`.
+        - Managing the BO list.
+        - Creating the `XeUserClient` when userspace connects.
 
 ---
 
-### 7. **User-space Tools**
-**xectl**
-- Open `IOUserClient` via `IOServiceOpen`.
-- Allocate buffers and submit simple batches.
-- Provide CLI commands: `info`, `regdump`, `noop`, `fill`.
+## `xectl` (userspace)
+
+`xectl` is a single‑file C tool (`userspace/xectl.c`) that:
+
+- Locates `XeService` via IOKit matching (bundle ID / class name).
+- Opens an `IOUserClient` connection.
+- Issues a small set of method calls for:
+    - Device info (vendor/device/revision, basic GT info).
+    - Simple BO allocation.
+    - Register dumps / basic GT configuration.
+
+Its CLI commands (e.g. `info`, `regdump`, `noop`, `mkbuf`) are thin wrappers around the kernel ABI described below.
 
 ---
 
-## Initialization Order
+## Current Feature Matrix
 
-1. PCI attach → BAR0 map → read device ID.
-2. Power-well enable / forcewake.
-3. Load GuC / HuC firmware.
-4. Init GGTT, allocate scratch / ring buffers.
-5. Enable interrupts.
-6. Submit `MI_NOOP` → verify seqno advancement.
-7. Add BO / BLT / compute functions.
-8. Optionally register IOAccelerator or framebuffer.
+| Area                      | Status         | Notes                                                 |
+|---------------------------|----------------|-------------------------------------------------------|
+| PCI attach / BAR0 map     | ✅ working     | Matches 8086:A788, maps BAR0 into kernel space        |
+| Register access helpers   | ✅ working     | 32‑bit MMIO, guarded against null `mmio`              |
+| Forcewake (GT)            | ✅ working     | RAII guard used when reading GT registers             |
+| GT config readout         | ✅ working     | Thread status + DSS enable, basic EU count            |
+| BO allocation / tracking  | ✅ working     | `IOBufferMemoryDescriptor` + cookie‑based registry    |
+| XeService / XeUserClient  | ✅ working     | User client exported, used by `xectl`                 |
+| GGTT structures           | 🔄 scaffolding | Types + basic stubs, not programming HW PTEs yet      |
+| Ring buffer structures    | 🔄 scaffolding | Alloc + in‑memory ring model, no HW ring programming  |
+| Command submission        | 🔄 scaffolding | MI_NOOP path prepared, not actually hitting GPU ring  |
+| GuC firmware              | 🔄 scaffolding | Status reads + placeholders, no real firmware load    |
+| IOAccelerator / FB        | ⏳ future      | No IOAccel or IOFramebuffer subclasses in use now     |
 
----
-
-## Data Structures
-
-```c
-struct XeRing {
-    volatile uint32_t *head, *tail, *start;
-    uint32_t size;
-};
-
-struct XeBO {
-    IOBufferMemoryDescriptor *mem;
-    uint64_t gtt_offset;
-};
-
-struct XeDevice {
-    IOPCIDevice *pdev;
-    IOMemoryMap *bar0;
-    XeRing render;
-    // more fields later
-};
-```
----
-
-## Kernel/User Interfaces
-
-| Interface | Direction | Purpose |
-|------------|------------|----------|
-| `method 0` | user → kernel | allocate BO |
-| `method 1` | user → kernel | submit batch |
-| `method 2` | user → kernel | wait seqno |
-| `method 3` | kernel → user | return status / regs |
+Legend: ✅ implemented and used · 🔄 present but not completing hardware flow · ⏳ not started / only ideas.
 
 ---
 
-## Build and Testing
+## Key Data Structures (as used today)
 
-### Quick Start
+The actual structures live in `kexts/` headers; this section only describes the intent.
 
-**Using Xcode:**
-```bash
-# Open the Xcode project
-open XePCI.xcodeproj
+- **`XeService`**
+    - Holds:
+        - `IOPCIDevice *pci` — the matched GPU PCI device.
+        - `IOMemoryMap *bar0` / `volatile uint32_t *mmio` — BAR0 mapping.
+        - `OSArray *m_boList` — small BO registry (stores `IOBufferMemoryDescriptor *`).
+    - Owns the lifetime of MMIO and BOs.
 
-# Build from Xcode (Cmd+B)
-# The kext will be in DerivedData/XePCI/Build/Products/Release/XePCI.kext
-```
+- **BO representation**
+    - Each BO: `IOBufferMemoryDescriptor *mem` plus an implicit index in `m_boList`.
+    - Userspace sees only a `uint64_t cookie` that indexes into this array.
 
-**Using Command Line:**
-```bash
-# Build with Makefile
-make release
-
-# Or build with xcodebuild
-xcodebuild -project XePCI.xcodeproj -scheme XePCI -configuration Release
-
-# Install (requires sudo and SIP disabled)
-sudo make install
-
-# Test with xectl tool
-cd userspace
-clang xectl.c -framework IOKit -framework CoreFoundation -o xectl
-sudo ./xectl info
-```
-
-### Documentation
-
-- **[BUILD.md](BUILD.md)** — Complete build instructions including Xcode project and Makefile builds, prerequisites, build options, and CI/CD setup.
-- **[TESTING.md](TESTING.md)** — Comprehensive testing guide for local Mac, including system preparation, installation, debugging, and safety procedures.
-
-### Build Notes
-- **Xcode Project**: Native Xcode project (`XePCI.xcodeproj`) for IDE-based development with full debugging support
-- **Makefile**: Traditional command-line build system for CI/CD and automated builds
-- Requires MacKernelSDK headers for compilation
-- SIP must be disabled for development and testing
-- Link against `IOKit` and `libkern`
-- Start with **read-only MMIO**; verify register layout using Linux `i915` / `xe` sources
-- Always test on non-critical hardware with fallback GPU/display
-- See [BUILD.md](BUILD.md) for detailed build instructions
+- **Ring / GGTT / GuC**
+    - Structures exist to track a single ring’s base, size, and pointers, and to hold GGTT / GuC state.
+    - At present these are only used for allocation / logging; they **do not** yet drive real hardware submission.
 
 ---
 
-## External References
-- **[POC.md](POC.md)** — Proof of Concept implementation details and technical documentation.
-- **[RESEARCH.md](RESEARCH.md)** — Comprehensive code examples and implementation patterns from WhateverGreen, Lilu, NootedBlue, and Linux xe driver.
-- **[BUILD.md](BUILD.md)** — Build system documentation and compilation instructions.
-- **[TESTING.md](TESTING.md)** — Testing procedures and debugging guide.
-- Linux `drivers/gpu/drm/xe` — register maps, GuC/HuC load, ring ops.
-- Lilu / WhateverGreen — macOS kext scaffolding and patching patterns.
-- NootedBlue — framebuffer spoofing and IGPU property examples.
-- Mesa `iris` / `anv` — user-space shader and command-stream references.
+## Kernel ↔︎ User ABI (IOUserClient)
+
+`XeUserClient` exposes a small fixed set of method selectors. The exact enum is defined in the kext sources; conceptually:
+
+| Selector | Name             | Direction          | Description                                  |
+|---------:|------------------|--------------------|----------------------------------------------|
+| 0        | `createBuffer`   | in: bytes (u64)    | Allocates a BO, returns a cookie (u64)       |
+| 1        | `submitNoop`     | none               | Placeholder for MI_NOOP submission           |
+| 2        | `wait`           | in: timeout (u32)  | Placeholder wait API (no real fence yet)     |
+| 3        | `readRegs`       | in: count (u32)    | Returns up to N dwords of MMIO register dump |
+
+This ABI is **experimental** and only considered stable enough for the in‑tree `xectl` tool.
 
 ---
 
-## Minimal Bring-up Checklist
-1. ✅ Verify PCI attach and BAR0 mapping (`XePCI.kext`).
-2. ✅ Confirm register reads (device ID, GT config).
-3. ✅ Enable power wells and forcewake.
-4. 🔄 Map GGTT base; allocate ring buffer (framework ready).
-5. 🔄 Submit `MI_NOOP` and verify seqno advance (prepared).
-6. 🔄 Implement buffer objects and simple BLT test (BO framework ready).
-7. ✅ Add IOUserClient interface (`XeService`).
-8. ⏳ Optionally integrate framebuffer or IOAccelerator shim.
+## Logging and Where to Look
 
-Legend: ✅ Complete | 🔄 Framework Ready | ⏳ Pending
+The kext logs under names like `XeService` / `XePCI` using `IOLog` / os_log‑style calls.
+
+When debugging on macOS (on the target machine):
+
+- Use `log stream --predicate 'process == "kernel"' --style compact | grep Xe` to watch live messages.
+- Use `log show --last 5m --predicate 'eventMessage CONTAINS[cd] "Xe"'` after a run to review history.
+- Look for lines that confirm:
+    - PCI match and BAR0 map.
+    - Forcewake acquire/release.
+    - GT thread status / DSS enable reads.
+    - BO create/destroy activity.
 
 ---
+
+## Short Roadmap (high‑level)
+
+Non‑exhaustive list of next technical steps, in rough order:
+
+1. **Real GGTT programming**
+     - Program PGTBL_CTL and populate GGTT entries instead of just stubs.
+2. **Single engine ring bring‑up**
+     - Program ring head/tail/start/ctl registers and verify idle/active transitions.
+3. **End‑to‑end MI submission**
+     - Submit a minimal batch (`MI_NOOP` + `MI_BATCH_BUFFER_END`) through the real ring and observe seqno/interrupts.
+4. **GuC firmware bring‑up (optional)**
+     - Load GuC from a userspace‑provided blob and verify status.
+5. **Optional higher‑level integration**
+     - Experiment with an IOAccelerator or dumb IOFramebuffer shim once low‑level flows are reliable.
+
+This roadmap is descriptive, not prescriptive: the code in `kexts/` is the source of truth for the current state.
