@@ -48,7 +48,10 @@ IOReturn XeUserClient::sCreateBuffer(OSObject* t, void*, IOExternalMethodArgumen
   if (!self || !self->providerSvc) return kIOReturnNotReady;
 
   // Scalar inputs are 64-bit; clamp safely to 32-bit size
-  uint32_t bytes = a->scalarInputCount ? (uint32_t)a->scalarInput[0] : 4096;
+  uint64_t bytesU64 = a->scalarInputCount ? a->scalarInput[0] : 4096;
+  // Reject sizes that don't fit in 32 bits
+  if (bytesU64 > UINT32_MAX) return kIOReturnBadArgument;
+  uint32_t bytes = (uint32_t)bytesU64;
 
   uint64_t cookie = 0;
   IOReturn kr = self->providerSvc->ucCreateBuffer(bytes, &cookie);
@@ -69,7 +72,9 @@ IOReturn XeUserClient::sWait(OSObject* t, void*, IOExternalMethodArguments* a) {
   auto self = OSDynamicCast(XeUserClient, t);
   if (!self || !self->providerSvc) return kIOReturnNotReady;
 
-  uint32_t timeoutMs = a->scalarInputCount ? (uint32_t)a->scalarInput[0] : 1000;
+  uint64_t timeoutU64 = a->scalarInputCount ? a->scalarInput[0] : 1000;
+  // Clamp timeout to reasonable 32-bit value
+  uint32_t timeoutMs = (timeoutU64 > UINT32_MAX) ? UINT32_MAX : (uint32_t)timeoutU64;
   return self->providerSvc->ucWait(timeoutMs);
 }
 
