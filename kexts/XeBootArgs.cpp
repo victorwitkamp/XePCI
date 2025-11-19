@@ -18,12 +18,22 @@ void XeParseBootArgs() {
     while (p && *p) {
         char *comma = strchr(p, ',');
         if (comma) *comma = '\0';
-        // Trim and lowercase token
+        // Trim leading whitespace
         while (*p == ' ' || *p == '\t') ++p;
+        // Copy and lowercase token, stopping at trailing whitespace
         char token[64] = {};
         size_t i = 0;
-        while (p[i] && i < sizeof(token)-1) { token[i] = (char)tolower(p[i]); ++i; }
+        while (p[i] && p[i] != ' ' && p[i] != '\t' && i < sizeof(token)-1) {
+            token[i] = (char)tolower(p[i]);
+            ++i;
+        }
         token[i] = '\0';
+        // Skip empty tokens
+        if (token[0] == '\0') {
+            if (!comma) break;
+            p = comma + 1;
+            continue;
+        }
         if (strcmp(token, "verbose") == 0) {
             gXeBoot.verbose = true;
         } else if (strcmp(token, "noforcewake") == 0) {

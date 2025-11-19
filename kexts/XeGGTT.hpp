@@ -1,6 +1,9 @@
 #pragma once
-#include "XeService.hpp"
+#include <stdint.h>
 #include "xe_hw_offsets.hpp"
+
+// Forward declare XeLog to avoid circular dependency
+extern void XeLog(const char* fmt, ...) __attribute__((format(printf,1,2)));
 
 class XeGGTT {
 public:

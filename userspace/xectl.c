@@ -16,8 +16,6 @@ enum {
   kMethodSubmit       = 1,
   kMethodWait         = 2,
   kMethodReadReg      = 3,
-  kMethodGetDeviceInfo = 4,
-  kMethodGetGTConfig  = 5,
 };
 
 static io_connect_t open_connection(void) {
@@ -38,18 +36,7 @@ static io_connect_t open_connection(void) {
 
 static void cmd_info(io_connect_t c) {
   printf("Connected to %s; handle=%u\n", kServiceClass, c);
-  
-  // Get device info
-  uint64_t info[4]; uint32_t infoCnt = 4;
-  kern_return_t kr = IOConnectCallMethod(c, kMethodGetDeviceInfo, NULL, 0, NULL, 0, info, &infoCnt, NULL, 0);
-  if (kr == KERN_SUCCESS && infoCnt >= 4) {
-    printf("Vendor ID: 0x%04x\n", (uint32_t)info[0]);
-    printf("Device ID: 0x%04x\n", (uint32_t)info[1]);
-    printf("Revision:  0x%02x\n", (uint32_t)info[2]);
-    printf("Accel Ready: %s\n", info[3] ? "Yes" : "No (prepared)");
-  } else {
-    printf("Failed to get device info\n");
-  }
+  printf("Note: Device info methods not yet implemented in kernel driver\n");
 }
 
 static void cmd_regdump(io_connect_t c) {
@@ -76,21 +63,9 @@ static void cmd_mkbuf(io_connect_t c, uint32_t bytes) {
   printf("Created buffer cookie=0x%llx (size=%u)\n", (unsigned long long)out[0], bytes);
 }
 
-static void cmd_gtconfig(io_connect_t c) {
-  uint64_t config[4]; uint32_t configCnt = 4;
-  kern_return_t kr = IOConnectCallMethod(c, kMethodGetGTConfig, NULL, 0, NULL, 0, config, &configCnt, NULL, 0);
-  if (kr != KERN_SUCCESS) { fprintf(stderr, "gtconfig failed: 0x%x\n", kr); return; }
-  if (configCnt >= 4) {
-    printf("GT_THREAD_STATUS:        0x%08x\n", (uint32_t)config[0]);
-    printf("GT_GEOMETRY_DSS_ENABLE:  0x%08x\n", (uint32_t)config[1]);
-    printf("FORCEWAKE_ACK_GT:        0x%08x\n", (uint32_t)config[2]);
-    printf("Ring Status:             0x%08x\n", (uint32_t)config[3]);
-  }
-}
-
 int main(int argc, char **argv) {
   if (argc < 2) { 
-    fprintf(stderr, "usage: %s [info|regdump|noop|mkbuf BYTES|gtconfig]\n", argv[0]); 
+    fprintf(stderr, "usage: %s [info|regdump|noop|mkbuf BYTES]\n", argv[0]); 
     return 1; 
   }
   io_connect_t c = open_connection();
@@ -98,7 +73,6 @@ int main(int argc, char **argv) {
   else if (!strcmp(argv[1], "regdump")) cmd_regdump(c);
   else if (!strcmp(argv[1], "noop"))    cmd_noop(c);
   else if (!strcmp(argv[1], "mkbuf") && argc >= 3) cmd_mkbuf(c, (uint32_t)strtoul(argv[2], NULL, 0));
-  else if (!strcmp(argv[1], "gtconfig")) cmd_gtconfig(c);
   else fprintf(stderr, "unknown cmd\n");
   IOServiceClose(c);
   return 0;

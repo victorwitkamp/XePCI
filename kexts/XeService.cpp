@@ -99,7 +99,7 @@ bool XeService::start(IOService* provider) {
   // panic("XePCI intentional panic: vendor=%04x device=%04x rev=0x%02x regs:[0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x",
   //   v, d, r, r0, r1, r2);
 
-  return true; // unreachable
+  return true;
 }
 
 void XeService::stop(IOService* provider) {
@@ -145,6 +145,9 @@ IOBufferMemoryDescriptor* XeService::boFromCookie(uint64_t cookie) {
 IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   if (!m_boList) return kIOReturnNotReady;
 
+  // Check for overflow before page-aligning
+  if (bytes > (UINT32_MAX - 0xFFFu)) return kIOReturnBadArgument;
+  
   // Page-align (4 KiB)
   uint32_t sz = (bytes + 0xFFFu) & ~0xFFFu;
 
@@ -170,6 +173,9 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
 
 IOReturn XeService::ucSubmitNoop() {
   if (!mmio) return kIOReturnNotReady;
+  
+  // Check if command stream is disabled before allocating resources
+  if (gXeBoot.disableCommandStream) return kIOReturnNotReady;
 
   // Allocate a tiny 4K batch (kernel-user shared so we can write commands)
   auto *md = IOBufferMemoryDescriptor::withOptions(

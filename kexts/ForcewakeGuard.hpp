@@ -11,6 +11,7 @@ public:
     OSSynchronizeIO();
     for (uint32_t i = 0; i < 100000; ++i) {
       if ((read32(XeHW::FORCEWAKE_ACK) & 0x0000FFFFu) == 0x0000FFFFu) break;
+      IODelay(1); // 1us delay to avoid busy-wait consuming CPU
     }
   }
   ~ForcewakeGuard() {
