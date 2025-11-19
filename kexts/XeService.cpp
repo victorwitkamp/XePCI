@@ -9,6 +9,9 @@
 
 #include <IOKit/IOBufferMemoryDescriptor.h> // for IOBufferMemoryDescriptor
 
+#include <stdarg.h>   // va_list, va_start, va_end
+#include <stdio.h>    // vsnprintf
+
 // Factory from XeUserClient.cpp
 extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
                                             task_t task, void* secID, UInt32 type);

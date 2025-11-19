@@ -2,15 +2,10 @@
 #include "XeBootArgs.hpp"
 #include <IOKit/IOLib.h>
 #include <pexpert/pexpert.h>
-#include <strings.h>
+#include <string.h>   // strcmp, strchr
+#include <ctype.h>    // tolower
 
 XeBootFlags gXeBoot; // global instance
-
-static void xeTrim(char *s) {
-    if (!s) return;
-    // Trim leading spaces
-    while (*s == ' ' || *s == '\t') ++s;
-}
 
 void XeParseBootArgs() {
     char buf[128] = {};
