@@ -7,6 +7,10 @@
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IOUserClient.h>
 #include <libkern/c++/OSArray.h>   // MacKernelSDK C++ header path
+#include "XeBootArgs.hpp"
+
+// Central logging helper (Task 2). Declared here for use across kext.
+void XeLog(const char* fmt, ...) __attribute__((format(printf,1,2)));
 
 // IOUserClient selector IDs (keep in one place)
 enum {

@@ -1,16 +1,28 @@
 #include "XeCommandStream.hpp"
+#include "XeService.hpp"
+#include "XeBootArgs.hpp"
 
 void XeCommandStream::logRcs0State() const {
   if (!m) return;
+  if (gXeBoot.disableCommandStream) {
+    XeLog("XeCS: logRcs0State skipped (nocs flag)\n");
+    return;
+  }
   ForcewakeGuard fw(m);
   uint32_t head = rd(XeHW::RCS0_RING_HEAD);
   uint32_t tail = rd(XeHW::RCS0_RING_TAIL);
   uint32_t ctl  = rd(XeHW::RCS0_RING_CTL);
   uint32_t gfx  = rd(XeHW::GFX_MODE);
-  IOLog("XeCS: RCS0 head=0x%08x tail=0x%08x ctl=0x%08x gfx=0x%08x\n", head, tail, ctl, gfx);
+  if (ctl == 0) {
+    XeLog("XeCS: WARNING RCS0_RING_CTL=0 (ring disabled?) head=0x%08x tail=0x%08x gfx=0x%08x\n", head, tail, gfx);
+  } else {
+    XeLog("XeCS: RCS0 head=0x%08x tail=0x%08x ctl=0x%08x gfx=0x%08x\n", head, tail, ctl, gfx);
+  }
 }
 
 IOReturn XeCommandStream::submitNoop(IOBufferMemoryDescriptor* bo) {
+  XeLog("XeCS: submitNoop invoked (nocs=%d)\n", gXeBoot.disableCommandStream);
+  if (gXeBoot.disableCommandStream) return kIOReturnNotReady;
   if (!m || !bo) return kIOReturnBadArgument;
 
   auto *va = (uint32_t*)bo->getBytesNoCopy();
@@ -26,7 +38,7 @@ IOReturn XeCommandStream::submitNoop(IOBufferMemoryDescriptor* bo) {
     uint32_t head = rd(XeHW::RCS0_RING_HEAD);
     uint32_t tail = rd(XeHW::RCS0_RING_TAIL);
     uint32_t ctl  = rd(XeHW::RCS0_RING_CTL);
-    IOLog("XeCS: (pre) head=0x%08x tail=0x%08x ctl=0x%08x\n", head, tail, ctl);
+    XeLog("XeCS: (pre) head=0x%08x tail=0x%08x ctl=0x%08x\n", head, tail, ctl);
   }
 
 #if 0
@@ -37,7 +49,7 @@ IOReturn XeCommandStream::submitNoop(IOBufferMemoryDescriptor* bo) {
     tail += 2 * sizeof(uint32_t);     // advance by our 2 dwords
     wr(XeHW::RCS0_RING_TAIL, tail);
     uint32_t newTail = rd(XeHW::RCS0_RING_TAIL);
-    IOLog("XeCS: (post) tail=0x%08x\n", newTail);
+    XeLog("XeCS: (post) tail=0x%08x\n", newTail);
   }
 #endif
 

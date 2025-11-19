@@ -2,6 +2,7 @@
 #include "xe_hw_offsets.hpp"
 #include "XeGGTT.hpp"
 #include "XeCommandStream.hpp"
+#include "XeBootArgs.hpp"
 
 #include <IOKit/IOLib.h>            // IOLog, kprintf
 #include <kern/debug.h>              // panic
@@ -14,15 +15,25 @@ extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
 
 #define super IOService
 
-// Mirror logs to both system log and on-screen (where possible)
-#define XE_LOG(fmt, ...) do { \
-  IOLog(fmt, ##__VA_ARGS__); \
-  kprintf(fmt, ##__VA_ARGS__); \
-} while (0)
+// Central logging helper implementation (Task 2)
+void XeLog(const char* fmt, ...) {
+  char buf[512];
+  va_list ap; va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  IOLog("%s", buf);
+  kprintf("%s", buf);
+}
 OSDefineMetaClassAndStructors(XeService, IOService)
 
 bool XeService::init(OSDictionary* props) {
   if (!super::init(props)) return false;
+  // Parse boot args early
+  XeParseBootArgs();
+  if (gXeBoot.verbose) {
+    XeLog("XeService::init verbose boot flags active (noforcewake=%d nocs=%d)\n",
+          gXeBoot.disableForcewake, gXeBoot.disableCommandStream);
+  }
   return true;
 }
 
@@ -61,14 +72,16 @@ bool XeService::start(IOService* provider) {
   uint32_t r1 = readReg(0x0100);
   uint32_t r2 = readReg(0x1000);
 
-  XE_LOG("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
-    v, d, r, (void*)mmio, r0, r1, r2);
+  XeLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
+        v, d, r, (void*)mmio, r0, r1, r2);
 
   // --- New: lightweight HW probes (safe reads) ---
-  XeGGTT::probe(mmio);
-  {
+  if (!gXeBoot.disableCommandStream) {
+    XeGGTT::probe(mmio);
     XeCommandStream cs(mmio);
-    cs.logRcs0State(); // logs head/tail/ctl/gfx; no writes
+    cs.logRcs0State();
+  } else {
+    XeLog("XeService: command stream disabled by boot flag nocs\n");
   }
 
   // Minimal BO registry
@@ -146,8 +159,8 @@ IOReturn XeService::ucCreateBuffer(uint32_t bytes, uint64_t* outCookie) {
   uint64_t cookie = m_boList->getCount(); // 1..N
   *outCookie = cookie;
 
-  XE_LOG("XeService: BO created cookie=%llu size=%u\n",
-    (unsigned long long)cookie, sz);
+  XeLog("XeService: BO created cookie=%llu size=%u\n",
+        (unsigned long long)cookie, sz);
 
   return kIOReturnSuccess;
 }
