@@ -8,7 +8,8 @@ void XeCommandStream::logRcs0State() const {
     XeLog("XeCS: logRcs0State skipped (nocs flag)\n");
     return;
   }
-  ForcewakeGuard fw(m);
+  ForcewakeGuard fw(m); // RAII: acquire forcewake for duration of this scope
+  (void)fw; // suppress unused variable warning - used for RAII
   uint32_t head = rd(XeHW::RCS0_RING_HEAD);
   uint32_t tail = rd(XeHW::RCS0_RING_TAIL);
   uint32_t ctl  = rd(XeHW::RCS0_RING_CTL);
@@ -34,7 +35,8 @@ IOReturn XeCommandStream::submitNoop(IOBufferMemoryDescriptor* bo) {
 
   // Read-only sanity first
   {
-    ForcewakeGuard fw(m);
+    ForcewakeGuard fw(m); // RAII: acquire forcewake for duration of this scope
+    (void)fw; // suppress unused variable warning - used for RAII
     uint32_t head = rd(XeHW::RCS0_RING_HEAD);
     uint32_t tail = rd(XeHW::RCS0_RING_TAIL);
     uint32_t ctl  = rd(XeHW::RCS0_RING_CTL);
@@ -44,7 +46,8 @@ IOReturn XeCommandStream::submitNoop(IOBufferMemoryDescriptor* bo) {
 #if 0
   // === Enable this after ring offsets look sane in logRcs0State() ===
   {
-    ForcewakeGuard fw(m);
+    ForcewakeGuard fw(m); // RAII: acquire forcewake for duration of this scope
+    (void)fw; // suppress unused variable warning - used for RAII
     uint32_t tail = rd(XeHW::RCS0_RING_TAIL);
     tail += 2 * sizeof(uint32_t);     // advance by our 2 dwords
     wr(XeHW::RCS0_RING_TAIL, tail);
