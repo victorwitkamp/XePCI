@@ -34,8 +34,8 @@ bool XeService::init(OSDictionary* props) {
   // Parse boot args early
   XeParseBootArgs();
   if (gXeBoot.verbose) {
-    XeLog("XeService::init verbose boot flags active (noforcewake=%d nocs=%d)\n",
-          gXeBoot.disableForcewake, gXeBoot.disableCommandStream);
+    XeLog("XeService::init boot flags: verbose=1 noforcewake=%d nocs=%d strictsafe=%d\n",
+          gXeBoot.disableForcewake, gXeBoot.disableCommandStream, gXeBoot.strictSafe);
   }
   return true;
 }
@@ -51,20 +51,32 @@ IOService* XeService::probe(IOService* provider, SInt32* score) {
 }
 
 bool XeService::start(IOService* provider) {
-  if (!super::start(provider)) return false;
+  if (!super::start(provider)) {
+    XeLog("XeService::start: super::start failed\n");
+    return false;
+  }
 
   pci = OSDynamicCast(IOPCIDevice, provider);
-  if (!pci) return false;
+  if (!pci) {
+    XeLog("XeService::start: provider is not IOPCIDevice\n");
+    return false;
+  }
 
   pci->setMemoryEnable(true);
   pci->setIOEnable(true);
   pci->setBusMasterEnable(true);
 
   bar0 = pci->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
-  if (!bar0) return false;
+  if (!bar0) {
+    XeLog("XeService::start: failed to map BAR0\n");
+    return false;
+  }
 
   mmio = reinterpret_cast<volatile uint32_t*>(bar0->getVirtualAddress());
-  if (!mmio) return false;
+  if (!mmio) {
+    XeLog("XeService::start: BAR0 virtual address is null\n");
+    return false;
+  }
 
   // Safe mode: only read vendor/device/rev and offsets 0x0, 0x4, 0x10, 0x100
   uint16_t v = pci->configRead16(kIOPCIConfigVendorID);
@@ -76,8 +88,9 @@ bool XeService::start(IOService* provider) {
   uint32_t reg10 = mmio[0x10 >> 2];
   uint32_t reg100 = mmio[0x100 >> 2];
 
-  XeLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p [0]=0x%08x [4]=0x%08x [0x10]=0x%08x [0x100]=0x%08x\n",
-        v, d, r, (void*)mmio, reg0, reg4, reg10, reg100);
+    XeLog("XeService::start: attach %04x:%04x rev 0x%02x BAR0=%p [0]=0x%08x [4]=0x%08x [0x10]=0x%08x [0x100]=0x%08x (noforcewake=%d nocs=%d strictsafe=%d)\n",
+      v, d, r, (void*)mmio, reg0, reg4, reg10, reg100,
+      gXeBoot.disableForcewake, gXeBoot.disableCommandStream, gXeBoot.strictSafe);
 
   if (gXeBoot.strictSafe) {
     XeLog("XeService: strictsafe mode active. All advanced probing disabled.\n");
@@ -179,21 +192,11 @@ IOReturn XeService::ucWait(uint32_t /*timeoutMs*/) {
 IOReturn XeService::ucReadRegs(uint32_t count, uint32_t* out, uint32_t* outCount) {
   if (!mmio || !out || !outCount) return kIOReturnNotReady;
 
-  // Fixed allow-list of safe, read-only dwords (global + RCS0 ring + GGTT ctl)
+  // Fixed allow-list of safe, read-only dwords.
+  // In strict safe mode we only touch the global sampler region (no GGTT/ring).
   static const uint32_t kSafeOffs[] = {
-    // global sampler
     0x0000, 0x0004, 0x0010, 0x0014,
     0x0100, 0x0104,
-    0x1000, 0x1004,
-
-    // ring regs (relative constants expanded to absolute in xe_hw_offsets.hpp)
-    XeHW::RCS0_RING_HEAD,
-    XeHW::RCS0_RING_TAIL,
-    XeHW::RCS0_RING_CTL,
-
-    // misc
-    XeHW::GFX_MODE,
-    XeHW::PGTBL_CTL,
   };
 
   uint32_t avail = static_cast<uint32_t>(sizeof(kSafeOffs) / sizeof(kSafeOffs[0]));
