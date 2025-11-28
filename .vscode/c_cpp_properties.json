@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "name": "MacKernelSDK",
+      "includePath": [
+        "${workspaceFolder}/kexts",
+        "${workspaceFolder}/MacKernelSDK/Headers"
+      ],
+      "defines": [
+        "__KERNEL__",
+        "KERNEL",
+        "KERNEL_PRIVATE",
+        "DRIVER_PRIVATE"
+      ],
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-clang-x64"
+    }
+  ],
+  "version": 4
+}

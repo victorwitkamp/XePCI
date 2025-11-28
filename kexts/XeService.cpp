@@ -66,40 +66,29 @@ bool XeService::start(IOService* provider) {
   mmio = reinterpret_cast<volatile uint32_t*>(bar0->getVirtualAddress());
   if (!mmio) return false;
 
-  // Simple read-only sanity (no GT writes yet)
+  // Safe mode: only read vendor/device/rev and offsets 0x0, 0x4, 0x10, 0x100
   uint16_t v = pci->configRead16(kIOPCIConfigVendorID);
   uint16_t d = pci->configRead16(kIOPCIConfigDeviceID);
   uint8_t  r = pci->configRead8(kIOPCIConfigRevisionID);
 
-  uint32_t r0 = readReg(0x0000);
-  uint32_t r1 = readReg(0x0100);
-  uint32_t r2 = readReg(0x1000);
+  uint32_t reg0 = mmio[0x0 >> 2];
+  uint32_t reg4 = mmio[0x4 >> 2];
+  uint32_t reg10 = mmio[0x10 >> 2];
+  uint32_t reg100 = mmio[0x100 >> 2];
 
-  XeLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p regs: [0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x\n",
-        v, d, r, (void*)mmio, r0, r1, r2);
+  XeLog("XeService: attach %04x:%04x rev 0x%02x BAR0=%p [0]=0x%08x [4]=0x%08x [0x10]=0x%08x [0x100]=0x%08x\n",
+        v, d, r, (void*)mmio, reg0, reg4, reg10, reg100);
 
-  // --- New: lightweight HW probes (safe reads) ---
-  if (!gXeBoot.disableCommandStream) {
-    XeGGTT::probe(mmio);
-    XeCommandStream cs(mmio);
-    cs.logRcs0State();
-  } else {
-    XeLog("XeService: command stream disabled by boot flag nocs\n");
+  if (gXeBoot.strictSafe) {
+    XeLog("XeService: strictsafe mode active. All advanced probing disabled.\n");
   }
 
-  // Minimal BO registry
+  // Minimal BO registry (optional, can be left for user client)
   m_boList = OSArray::withCapacity(8);
   if (!m_boList) return false;
 
-  registerService();  // allow IOUserClient to open us
-
-  // Intentionally panic after completing the last startup action,
-  // so all logs above are flushed and visible on-screen during the panic.
-  // XE_LOG("XeService: intentional panic for bring-up diagnostics\n");
-  // panic("XePCI intentional panic: vendor=%04x device=%04x rev=0x%02x regs:[0]=0x%08x [0x100]=0x%08x [0x1000]=0x%08x",
-  //   v, d, r, r0, r1, r2);
-
-  return true; // unreachable
+  registerService();
+  return true;
 }
 
 void XeService::stop(IOService* provider) {

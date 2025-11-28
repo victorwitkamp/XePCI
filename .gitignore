@@ -41,7 +41,6 @@ xectl
 userspace/xectl
 
 # IDE
-.vscode/
 .idea/
 
 # Temporary files

@@ -6,6 +6,7 @@ struct XeBootFlags {
     bool verbose {false};
     bool disableForcewake {false};
     bool disableCommandStream {false};
+    bool strictSafe {false};
 };
 
 extern XeBootFlags gXeBoot; // defined in XeBootArgs.cpp

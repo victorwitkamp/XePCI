@@ -30,10 +30,14 @@ void XeParseBootArgs() {
             gXeBoot.disableForcewake = true;
         } else if (strcmp(token, "nocs") == 0) {
             gXeBoot.disableCommandStream = true;
+        } else if (strcmp(token, "strictsafe") == 0) {
+            gXeBoot.strictSafe = true;
+            gXeBoot.disableForcewake = true;
+            gXeBoot.disableCommandStream = true;
         }
         if (!comma) break;
         p = comma + 1;
     }
-    IOLog("XePCI: boot flags: verbose=%d noforcewake=%d nocs=%d\n",
-          gXeBoot.verbose, gXeBoot.disableForcewake, gXeBoot.disableCommandStream);
+    IOLog("XePCI: boot flags: verbose=%d noforcewake=%d nocs=%d strictsafe=%d\n",
+          gXeBoot.verbose, gXeBoot.disableForcewake, gXeBoot.disableCommandStream, gXeBoot.strictSafe);
 }
