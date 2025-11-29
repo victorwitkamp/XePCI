@@ -53,3 +53,40 @@ Experimental / currently disabled paths:
 - Any forcewake-based access patterns are disabled; `ForcewakeGuard` is implemented as a no-op.
 
 As BAR0 layout and register behavior become better understood, individual reads and eventually carefully-scoped writes can be re-enabled behind additional boot flags.
+
+## Future Directions
+
+See [FRAMEBUFFER_ANALYSIS.md](FRAMEBUFFER_ANALYSIS.md) for detailed analysis of the [pawan295/Appleinteltgldriver.kext](https://github.com/pawan295/Appleinteltgldriver.kext) reference implementation, which has achieved a working framebuffer on Tiger Lake.
+
+See [RESEARCH_GUIDE.md](RESEARCH_GUIDE.md) for a comprehensive list of registers to research and the methodology to collect similar data for Raptor Lake.
+
+### Potential Next Steps
+
+1. **Collect Raptor Lake Register Dump**
+   - Run `intel_reg dump --all` on Linux with the Raptor Lake GPU
+   - Compare offsets with Tiger Lake reference
+   - Document any differences in register layouts
+
+2. **IOFramebuffer Integration**
+   - The reference implementation uses an `IOFramebuffer` subclass approach
+   - This allows WindowServer to recognize the display device
+   - Would require porting power management and display pipeline code
+
+3. **Power Well / Forcewake Sequence**
+   - Reference shows detailed power-up sequence for Tiger Lake
+   - Raptor Lake should have similar but potentially different register offsets
+   - Key registers: `PWR_WELL_CTL_1/2`, `FORCEWAKE_RENDER_CTL`
+
+4. **GGTT Implementation**
+   - Reference maps BAR1 (GTTMMADR) for Graphics Translation Table
+   - Each 4KB page needs a PTE entry
+   - Required for GPU to access framebuffer memory
+
+5. **Display Pipeline**
+   - Pipe/Transcoder timing configuration
+   - Plane control and surface address
+   - DDI buffer enable
+
+### Hardware Considerations
+
+The reference targets Tiger Lake (8086:9A49), while XePCI targets Raptor Lake (8086:A788). Both are Gen12 architecture but register offsets may differ. Intel PRMs (Programmer's Reference Manuals) should be consulted for Raptor Lake specifics.
