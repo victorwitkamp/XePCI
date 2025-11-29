@@ -161,7 +161,8 @@ IOReturn XeUserClient::sReadRegs(OSObject* t, void*, IOExternalMethodArguments* 
   uint32_t n = 8;
   IOReturn kr = self->providerSvc->ucReadRegs(n, tmp, &n);
   if (kr == kIOReturnSuccess) {
-    uint32_t outMax = (a->scalarOutputCount < n) ? a->scalarOutputCount : n;
+    // Safety: use minimum of returned count and fixed buffer size (8)
+    uint32_t outMax = (n < 8) ? n : 8;
     for (uint32_t i = 0; i < outMax; ++i) {
       a->scalarOutput[i] = (uint64_t)tmp[i];
     }

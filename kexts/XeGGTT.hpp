@@ -16,10 +16,14 @@ constexpr uint32_t kGGTTMaxOffset = 0x00FFFFFF;
 // - Safe defaults returned on error
 class XeGGTT {
 public:
+  // Sentinel values for error detection
+  static constexpr uint32_t kErrorNullMMIO = 0xDEADBEEF;
+  static constexpr uint32_t kErrorOutOfRange = 0xBAD0FFFF;
+
   // Safe register read with bounds checking
   static inline uint32_t safeRead(volatile uint32_t* mmio, uint32_t off) {
-    if (!mmio) return 0xDEADBEEF;
-    if (off > kGGTTMaxOffset) return 0xBAD0FFFF;
+    if (!mmio) return kErrorNullMMIO;
+    if (off > kGGTTMaxOffset) return kErrorOutOfRange;
     return mmio[off >> 2];
   }
 
@@ -34,7 +38,7 @@ public:
 
     // Read page table control register (with safety check)
     uint32_t pgtblCtl = safeRead(mmio, XeHW::PGTBL_CTL);
-    if (pgtblCtl == 0xDEADBEEF || pgtblCtl == 0xBAD0FFFF) {
+    if (pgtblCtl == kErrorNullMMIO || pgtblCtl == kErrorOutOfRange) {
       XeLog("XeGGTT::probe: ERROR - failed to read PGTBL_CTL\n");
       return false;
     }
@@ -76,7 +80,7 @@ public:
     }
     
     info.pgtblCtl = safeRead(mmio, XeHW::PGTBL_CTL);
-    if (info.pgtblCtl == 0xDEADBEEF || info.pgtblCtl == 0xBAD0FFFF) {
+    if (info.pgtblCtl == kErrorNullMMIO || info.pgtblCtl == kErrorOutOfRange) {
       XeLog("XeGGTT::getInfo: ERROR - failed to read PGTBL_CTL\n");
       return info;
     }

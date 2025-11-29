@@ -106,8 +106,16 @@ bool XeService::start(IOService* provider) {
   // Store BAR0 length for bounds checking
   bar0Length = bar0->getLength();
   if (bar0Length == 0) {
-    XeLog("XePCI: WARNING - BAR0 length is 0, using default max offset\n");
-    bar0Length = kMaxSafeMMIOOffset + 1;
+    XeLog("XePCI: ERROR - BAR0 length is 0, hardware issue detected\n");
+    bar0->release();
+    bar0 = nullptr;
+    return false;
+  }
+  
+  // Validate BAR0 is at least 1MB (minimum expected for Intel iGPU)
+  if (bar0Length < 1024 * 1024) {
+    XeLog("XePCI: WARNING - BAR0 length %llu is smaller than expected\n", 
+          (unsigned long long)bar0Length);
   }
 
   mmio = reinterpret_cast<volatile uint32_t*>(bar0->getVirtualAddress());
@@ -118,8 +126,8 @@ bool XeService::start(IOService* provider) {
     return false;
   }
   
-  XeLog("XePCI: BAR0 mapped at virtual address %p, size=%llu bytes\n", 
-        (void*)mmio, (unsigned long long)bar0Length);
+  XeLog("XePCI: BAR0 mapped at virtual address %p, size=%llu bytes (%lluMB)\n", 
+        (void*)mmio, (unsigned long long)bar0Length, (unsigned long long)(bar0Length / (1024 * 1024)));
   XeLog("XePCI: Step 3/7: COMPLETE - BAR0 mapped successfully\n");
 
   // Step 4: Read PCI configuration
@@ -412,11 +420,16 @@ IOReturn XeService::ucReadRegs(uint32_t count, uint32_t* out, uint32_t* outCount
   }
 
   // Expanded allow-list of safe, read-only registers using documented Raptor Lake offsets
-  // These are verified from raptor_lake_regs.txt dump
+  // All offsets use named constants from XeHW namespace
   static const uint32_t kSafeOffs[] = {
     // Basic device registers
-    0x0000, 0x0004, 0x0010, 0x0014, 0x0100, 0x0104,
-    // Power management (from XeHW namespace - read-only safe)
+    XeHW::DEVICE_ID_REG0,            // 0x0000
+    XeHW::DEVICE_ID_REG1,            // 0x0004
+    XeHW::DEVICE_ID_REG2,            // 0x0010
+    XeHW::DEVICE_ID_REG3,            // 0x0014
+    XeHW::DEVICE_ID_REG4,            // 0x0100
+    XeHW::DEVICE_ID_REG5,            // 0x0104
+    // Power management
     XeHW::GEN6_RP_CONTROL,           // 0xA024
     XeHW::GEN6_RC_STATE,             // 0xA094
     // Power wells

@@ -4,6 +4,17 @@
 namespace XeHW {
 
 // ============================================================================
+// Basic Device Identification Registers (common to all Intel GPUs)
+// ============================================================================
+
+constexpr uint32_t DEVICE_ID_REG0     = 0x00000000;  // Device ID / Vendor ID
+constexpr uint32_t DEVICE_ID_REG1     = 0x00000004;  // Status / Command
+constexpr uint32_t DEVICE_ID_REG2     = 0x00000010;  // Class code / Revision
+constexpr uint32_t DEVICE_ID_REG3     = 0x00000014;  // Header type / BIST
+constexpr uint32_t DEVICE_ID_REG4     = 0x00000100;  // Subsystem ID
+constexpr uint32_t DEVICE_ID_REG5     = 0x00000104;  // Capabilities pointer
+
+// ============================================================================
 // Engine / Ring Registers (Gen12)
 // ============================================================================
 

@@ -26,6 +26,10 @@ enum {
 // BAR0 is 16MB (0x1000000) based on lspci data
 constexpr uint32_t kMaxSafeMMIOOffset = 0x00FFFFFF;
 
+// Sentinel values for error conditions (used throughout the kext)
+constexpr uint32_t kSentinelNullMMIO = 0xDEADBEEF;     // Returned when mmio pointer is null
+constexpr uint32_t kSentinelOutOfRange = 0xBAD0FFFF;  // Returned when offset exceeds max
+
 class XeUserClient; // fwd
 
 class XeService final : public IOService {

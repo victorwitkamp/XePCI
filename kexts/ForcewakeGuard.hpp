@@ -52,11 +52,15 @@ public:
 private:
   volatile uint32_t* m;
   bool acquired;
+  
+  // Sentinel values for error detection
+  static constexpr uint32_t kErrorNullMMIO = 0xDEADBEEF;
+  static constexpr uint32_t kErrorOutOfRange = 0xBAD0FFFF;
 
   // Safe register read with null check
   inline uint32_t rd(uint32_t off) const { 
-    if (!m) return 0xDEADBEEF;
-    if (off > kForcewakeMaxOffset) return 0xBAD0FFFF;
+    if (!m) return kErrorNullMMIO;
+    if (off > kForcewakeMaxOffset) return kErrorOutOfRange;
     return m[off >> 2]; 
   }
   
@@ -76,16 +80,16 @@ private:
     // To set bit 0: write 0x00010001
     wr(XeHW::FORCEWAKE_REQ, 0x00010001);
     
-    // Poll for acknowledgment with timeout (max ~10ms to be safe)
-    // Using shorter delays to avoid holding CPU too long
-    const int maxIterations = 100;
-    const int delayPerIteration = 100; // microseconds
+    // Poll for acknowledgment with timeout (max ~50ms to be safe)
+    // Intel documentation recommends ~1ms delays between polls
+    const int maxIterations = 50;
+    const int delayPerIteration = 1000; // 1ms in microseconds (per Intel docs)
     
     for (int i = 0; i < maxIterations; ++i) {
       uint32_t ack = rd(XeHW::FORCEWAKE_ACK);
       
       // Check for invalid read (null mmio or out of range)
-      if (ack == 0xDEADBEEF || ack == 0xBAD0FFFF) {
+      if (ack == kErrorNullMMIO || ack == kErrorOutOfRange) {
         XeLog("ForcewakeGuard: ERROR - invalid ACK read (0x%08x)\n", ack);
         return;
       }
