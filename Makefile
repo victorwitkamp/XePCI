@@ -24,7 +24,8 @@ SOURCES = \
     kexts/XeUserClient.cpp \
     kexts/ForcewakeGuard.cpp \
     kexts/XeGGTT.cpp \
-    kexts/XeCommandStream.cpp
+    kexts/XeCommandStream.cpp \
+    kexts/XeBootArgs.cpp
 
 HEADERS = \
     kexts/XeService.hpp \
@@ -32,6 +33,7 @@ HEADERS = \
     kexts/ForcewakeGuard.hpp \
     kexts/XeGGTT.hpp \
     kexts/XeCommandStream.hpp \
+    kexts/XeBootArgs.hpp \
     kexts/xe_hw_offsets.hpp
 
 # ---- SDK / toolchain ----

@@ -264,29 +264,96 @@ For Raptor Lake specifically, look for:
 
 ### Phase 1: Basic Info Collection
 
-- [ ] Run `lspci -vvv` to get BAR addresses
-- [ ] Run `intel_reg dump --all` on Linux to get register values
-- [ ] Document device ID and revision
+- [x] Run `lspci -vvv` to get BAR addresses
+- [x] Run `intel_reg dump --all` on Linux to get register values
+- [x] Document device ID and revision
 - [ ] Compare BAR0/BAR1 sizes with Tiger Lake
 
 ### Phase 2: Power Management Comparison
 
-- [ ] Compare power well register layouts
-- [ ] Compare forcewake register addresses
+- [x] Compare power well register layouts
+- [x] Compare forcewake register addresses
 - [ ] Document any differences in bit positions
 
 ### Phase 3: Display Pipeline Comparison
 
-- [ ] Compare transcoder register addresses
-- [ ] Compare plane register addresses
-- [ ] Check for any new/removed registers
-- [ ] Document timing register values for your panel
+- [x] Compare transcoder register addresses
+- [x] Compare plane register addresses
+- [x] Check for any new/removed registers
+- [x] Document timing register values for your panel
 
 ### Phase 4: Integration
 
-- [ ] Update `xe_hw_offsets.hpp` with Raptor Lake offsets
+- [x] Update `xe_hw_offsets.hpp` with Raptor Lake offsets
 - [ ] Create safe read-only probe for new registers
 - [ ] Implement power-up sequence based on findings
+
+---
+
+## Collected Research Data (November 2024)
+
+The following data was collected from a working Linux system with Raptor Lake:
+
+### Device Information (from lspci)
+
+- **Device**: Intel Raptor Lake-S UHD Graphics
+- **PCI ID**: 8086:a788 (rev 04)
+- **Subsystem**: ASUSTeK Computer Inc. (1043:219d)
+- **BAR0 (GTTMMADR)**: 0x625b000000 (16MB, 64-bit non-prefetchable)
+- **BAR2 (GMADR)**: 0x4000000000 (256MB, 64-bit prefetchable)
+- **I/O Ports**: 0x6000 (64 bytes)
+- **Kernel driver**: i915
+
+### Working Display Mode (from intel_reg dump)
+
+The system was running at **2560x1600@60Hz** with the following timing values:
+
+```
+PIPEASRC     = 0x09ff063f  (2560, 1600)
+HTOTAL_A     = 0x0a9f09ff  (2560 active, 2720 total)
+HBLANK_A     = 0x0a9f09ff  (2560 start, 2720 end)
+HSYNC_A      = 0x0a4f0a2f  (2608 start, 2640 end)
+VTOTAL_A     = 0x06df063f  (1600 active, 1760 total)
+VBLANK_A     = 0x06df063f  (1600 start, 1760 end)
+VSYNC_A      = 0x06480642  (1603 start, 1609 end)
+```
+
+Pixel clock: ~287.2 MHz (2720 * 1760 * 60)
+
+### DDI/Port Configuration
+
+```
+DDI_BUF_CTL_A        = 0x80000006  (enabled, x4 lanes)
+PIPE_DDI_FUNC_CTL_A  = 0x8a100006  (enabled, DP SST, 10bpc, x4)
+```
+
+### Plane Configuration
+
+```
+PIPEACONF   = 0xc0000000  (enabled, active)
+DSPACNTR    = 0x84000400  (enabled, pipe A)
+DSPASTRIDE  = 0x00000014  (stride value)
+DSPASURF    = 0x0ca40000  (surface address in GGTT)
+```
+
+### Power State
+
+```
+HSW_PWR_WELL_CTL1 = 0x0000000d
+HSW_PWR_WELL_CTL2 = 0x0000000f
+HSW_PWR_WELL_CTL4 = 0x00000005
+GEN6_RC_STATE     = 0x00040000
+GEN6_RC_CONTROL   = 0x00040000
+```
+
+### Backlight
+
+```
+BLC_PWM_PCH_CTL1 = 0x80000000  (enabled)
+BLC_PWM_PCH_CTL2 = 0x00004b00  (duty cycle)
+PCH_PP_STATUS    = 0x80000008  (panel on)
+PCH_PP_CONTROL   = 0x00000067  (backlight enabled)
+```
 
 ---
 

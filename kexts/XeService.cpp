@@ -10,7 +10,6 @@
 #include <IOKit/IOBufferMemoryDescriptor.h> // for IOBufferMemoryDescriptor
 
 #include <stdarg.h>   // va_list, va_start, va_end
-#include <stdio.h>    // vsnprintf
 
 // Factory from XeUserClient.cpp
 extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
@@ -19,13 +18,15 @@ extern "C" IOUserClient* XeCreateUserClient(class XeService* provider,
 #define super IOService
 
 // Central logging helper implementation (Task 2)
+// Uses IOLog directly with format string forwarding (kernel-safe)
 void XeLog(const char* fmt, ...) {
-  char buf[512];
-  va_list ap; va_start(ap, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, ap);
+  // IOLog supports printf-style formatting directly
+  // We use a simple wrapper that calls IOLog and kprintf
+  va_list ap;
+  va_start(ap, fmt);
+  // IOLogv is available in kernel for variadic logging
+  IOLogv(fmt, ap);
   va_end(ap);
-  IOLog("%s", buf);
-  kprintf("%s", buf);
 }
 OSDefineMetaClassAndStructors(XeService, IOService)
 
