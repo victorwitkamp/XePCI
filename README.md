@@ -192,3 +192,21 @@ Non‑exhaustive list of next technical steps, in rough order:
      - Experiment with an IOAccelerator or dumb IOFramebuffer shim once low‑level flows are reliable.
 
 This roadmap is descriptive, not prescriptive: the code in `kexts/` is the source of truth for the current state.
+
+---
+
+## Reference Analysis
+
+See [docs/FRAMEBUFFER_ANALYSIS.md](docs/FRAMEBUFFER_ANALYSIS.md) for a detailed analysis of the [pawan295/Appleinteltgldriver.kext](https://github.com/pawan295/Appleinteltgldriver.kext) project, which has achieved a working framebuffer on Intel Tiger Lake. Key learnings include:
+
+- **IOFramebuffer** subclass approach for WindowServer integration
+- **Power management** sequence (power wells, forcewake)
+- **GGTT mapping** for GPU-accessible framebuffer memory
+- **Display pipeline** configuration (pipe, transcoder, plane, DDI)
+
+See [docs/RESEARCH_GUIDE.md](docs/RESEARCH_GUIDE.md) for a comprehensive guide on researching Raptor Lake GPU registers, including:
+
+- **Register dump methodology** using Linux intel-gpu-tools
+- **Register categories** to collect (power, clocks, planes, transcoders)
+- **Working values** from Tiger Lake for comparison
+- **Linux i915 source** references for each subsystem
