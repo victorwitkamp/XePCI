@@ -18,6 +18,8 @@
 		CAD9794FC4534DE1A2BFF4AB /* XeCommandStream.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5CC91A15A51049BFB2890BFB /* XeCommandStream.hpp */; };
 		D8E381C4F26C4EFF8EB50CF3 /* XeUserClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18D666EED1E544A28E00A24C /* XeUserClient.cpp */; };
 		E5B8FD42A80B4A54B62D7DE4 /* XeGGTT.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 388898F9F0A64CB18375F4CF /* XeGGTT.hpp */; };
+		A1B2C3D4E5F6789012345678 /* XeBootArgs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678A1 /* XeBootArgs.cpp */; };
+		C3D4E5F6789012345678A1B2 /* XeBootArgs.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D4E5F6789012345678A1B2C3 /* XeBootArgs.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,8 @@
 		82B6DA9B26164C9FA3A0EBDA /* ForcewakeGuard.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ForcewakeGuard.hpp; sourceTree = "<group>"; };
 		DD3DECD112AB41F9B313F86D /* XeService.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeService.hpp; sourceTree = "<group>"; };
 		DD6147292EC8406E965F7DB3 /* xe_hw_offsets.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xe_hw_offsets.hpp; sourceTree = "<group>"; };
+		B2C3D4E5F6789012345678A1 /* XeBootArgs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XeBootArgs.cpp; sourceTree = "<group>"; };
+		D4E5F6789012345678A1B2C3 /* XeBootArgs.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XeBootArgs.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +89,7 @@
 				82B6DA9B26164C9FA3A0EBDA /* ForcewakeGuard.hpp */,
 				388898F9F0A64CB18375F4CF /* XeGGTT.hpp */,
 				5CC91A15A51049BFB2890BFB /* XeCommandStream.hpp */,
+				D4E5F6789012345678A1B2C3 /* XeBootArgs.hpp */,
 				DD6147292EC8406E965F7DB3 /* xe_hw_offsets.hpp */,
 			);
 			name = Headers;
@@ -99,6 +104,7 @@
 				38270B3E29A945AAB20DDF3E /* ForcewakeGuard.cpp */,
 				1500EC33208845E3A80FAEDC /* XeGGTT.cpp */,
 				2D55C46D4F6B408CBF194DF8 /* XeCommandStream.cpp */,
+				B2C3D4E5F6789012345678A1 /* XeBootArgs.cpp */,
 			);
 			name = Sources;
 			path = kexts;
@@ -134,6 +140,7 @@
 				7C5D322F59394AAE824874C2 /* ForcewakeGuard.hpp in Headers */,
 				E5B8FD42A80B4A54B62D7DE4 /* XeGGTT.hpp in Headers */,
 				CAD9794FC4534DE1A2BFF4AB /* XeCommandStream.hpp in Headers */,
+				C3D4E5F6789012345678A1B2 /* XeBootArgs.hpp in Headers */,
 				098030A0723A4AF2858FCB14 /* xe_hw_offsets.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -211,6 +218,7 @@
 				C999BB7FBF18411499A10DC6 /* ForcewakeGuard.cpp in Sources */,
 				C6DD830D6A0244008D63D75C /* XeGGTT.cpp in Sources */,
 				79C8421F27514D3793CE14D6 /* XeCommandStream.cpp in Sources */,
+				A1B2C3D4E5F6789012345678 /* XeBootArgs.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -12,10 +12,12 @@ private:
   XeService* providerSvc {nullptr};
 
   // Static dispatchers used by IOExternalMethodDispatch
-  static IOReturn sCreateBuffer(OSObject* target, void* ref, IOExternalMethodArguments* args);
-  static IOReturn sSubmit      (OSObject* target, void* ref, IOExternalMethodArguments* args);
-  static IOReturn sWait        (OSObject* target, void* ref, IOExternalMethodArguments* args);
-  static IOReturn sReadRegs    (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sCreateBuffer  (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sSubmit        (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sWait          (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sReadRegs      (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sGetGTConfig   (OSObject* target, void* ref, IOExternalMethodArguments* args);
+  static IOReturn sGetDisplayInfo(OSObject* target, void* ref, IOExternalMethodArguments* args);
 
   static const IOExternalMethodDispatch sMethods[];
 
