@@ -49,7 +49,7 @@ constexpr uint32_t GEN6_RP_INTERRUPT_LIMITS= 0x0000A014;
 constexpr uint32_t GEN6_RP_UP_THRESHOLD    = 0x0000A02C;
 constexpr uint32_t GEN6_RP_UP_EI           = 0x0000A068;
 constexpr uint32_t GEN6_RP_DOWN_EI         = 0x0000A06C;
-constexpr uint32_t GEN6_RP_IDLE_HYSTERSIS  = 0x0000A070;
+constexpr uint32_t GEN6_RP_IDLE_HYSTERESIS = 0x0000A070;
 
 // RC state control
 constexpr uint32_t GEN6_RC_STATE           = 0x0000A094;  // value: 0x00040000
@@ -57,7 +57,7 @@ constexpr uint32_t GEN6_RC_CONTROL         = 0x0000A090;  // value: 0x00040000
 constexpr uint32_t GEN6_RC1_WAKE_RATE_LIMIT= 0x0000A098;
 constexpr uint32_t GEN6_RC6_WAKE_RATE_LIMIT= 0x0000A09C;
 constexpr uint32_t GEN6_RC_EVALUATION_INTERVAL = 0x0000A0A8;
-constexpr uint32_t GEN6_RC_IDLE_HYSTERSIS  = 0x0000A0AC;  // value: 0x00000019
+constexpr uint32_t GEN6_RC_IDLE_HYSTERESIS = 0x0000A0AC;  // value: 0x00000019
 constexpr uint32_t GEN6_RC_SLEEP           = 0x0000A0B0;
 constexpr uint32_t GEN6_RC1e_THRESHOLD     = 0x0000A0B4;
 constexpr uint32_t GEN6_RC6_THRESHOLD      = 0x0000A0B8;
@@ -212,7 +212,7 @@ constexpr uint32_t PIPEEDPCONF             = 0x0007F008;
 
 // Plane A (Primary)
 constexpr uint32_t DSPACNTR                = 0x00070180;  // value: 0x84000400 (enabled, pipe A)
-constexpr uint32_t DSPASTRIDE              = 0x00070188;  // value: 0x00000014 (20 bytes - stride)
+constexpr uint32_t DSPASTRIDE              = 0x00070188;  // value: 0x00000014 (stride value from dump)
 constexpr uint32_t DSPASURF                = 0x0007019C;  // value: 0x0ca40000 (surface address)
 constexpr uint32_t DSPATILEOFF             = 0x000701A4;  // tile offset
 
